@@ -1,0 +1,11 @@
+/.zig-cache/
+/grammars/
+/vcpkg/
+/vcpkg_installed/
+/zig/
+/.idea/.gitignore
+/.idea/c-tree-sitter.iml
+/.idea/editor.xml
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/vcs.xml

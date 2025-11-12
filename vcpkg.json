@@ -1,0 +1,7 @@
+{
+  "name": "tree-sitter-tokenizer",
+  "version": "0.1.0",
+  "dependencies": [
+    "tree-sitter"
+  ]
+}
