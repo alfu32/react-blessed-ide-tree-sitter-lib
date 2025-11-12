@@ -117,8 +117,8 @@ def main():
     grammars = load_csv(CSV_PATH)
     ensure_vcpkg()
     install_vcpkg_deps()
-    ensure_zig()
-    bind_zig()
+    #ensure_zig()
+    #bind_zig()
     clone_grammars(grammars)
 
     print("[✓] Initialization complete.")
