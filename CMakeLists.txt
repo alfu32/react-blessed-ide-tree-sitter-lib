@@ -35,8 +35,8 @@ add_library(tree_sitter_tokenizer SHARED ${SRC})
 target_include_directories(tree_sitter_tokenizer PUBLIC src)
 
 # --- locate and link tree-sitter manually ---
-set(TREE_SITTER_INCLUDE "${VCPKG_ROOT}/installed/${VCPKG_TARGET_TRIPLET}/include")
-set(TREE_SITTER_LIB_DIR "${VCPKG_ROOT}/installed/${VCPKG_TARGET_TRIPLET}/lib")
+set(TREE_SITTER_INCLUDE "${VCPKG_ROOT}_installed/${VCPKG_TARGET_TRIPLET}/include")
+set(TREE_SITTER_LIB_DIR "${VCPKG_ROOT}_installed/${VCPKG_TARGET_TRIPLET}/lib")
 
 find_library(TREE_SITTER_LIB tree-sitter HINTS "${TREE_SITTER_LIB_DIR}" REQUIRED)
 
