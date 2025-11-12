@@ -2,7 +2,7 @@ const std = @import("std");
 
 fn addGrammarSources(b: *std.Build, step: *std.Build.Step.Compile, dir_path: []const u8) !void {
     const gpa = std.heap.page_allocator;
-    var dir = try std.fs.cwd().openIterableDir(dir_path, .{});
+    var dir = try std.fs.cwd().openDir(dir_path, .{ .iterate = true });
     defer dir.close();
 
     var it = dir.iterate();
@@ -11,12 +11,12 @@ fn addGrammarSources(b: *std.Build, step: *std.Build.Step.Compile, dir_path: []c
             if (std.mem.endsWith(u8, entry.name, "parser.c") or
                 std.mem.endsWith(u8, entry.name, "scanner.c"))
                 {
-                    const full_path = try std.fs.path.join(gpa, &.{dir_path, entry.name});
-                    std.debug.print("[+] Adding grammar source: {s}\n", .{full_path});
+                    const full_path = try std.fs.path.join(gpa, &.{ dir_path, entry.name });
+                    std.debug.print("[+] Adding grammar source: {s}\n", .{ full_path });
                     step.addCSourceFile(.{ .file = .{ .cwd_relative = full_path }, .flags = &[_][]const u8{} });
                 }
         } else if (entry.kind == .directory) {
-            const subpath = try std.fs.path.join(gpa, &.{dir_path, entry.name});
+            const subpath = try std.fs.path.join(gpa, &.{ dir_path, entry.name });
             try addGrammarSources(b, step, subpath);
         }
     }
@@ -34,7 +34,7 @@ pub fn build(b: *std.Build) void {
         else if (std.mem.eql(u8, triplet, "macos64"))
                 b.resolveTargetQuery(.{ .os_tag = .macos, .cpu_arch = .x86_64 })
             else blk: {
-                    std.debug.print("[!] Unknown triplet '{s}', defaulting to linux64-gnu\n", .{triplet});
+                    std.debug.print("[!] Unknown triplet '{s}', defaulting to linux64-gnu\n", .{ triplet });
                     break :blk b.resolveTargetQuery(.{ .os_tag = .linux, .abi = .gnu, .cpu_arch = .x86_64 });
                 };
 
