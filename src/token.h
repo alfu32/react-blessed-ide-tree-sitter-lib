@@ -1,11 +1,9 @@
 #pragma once
 #include <stdint.h>
-
-#ifdef _WIN32
-  #define API_EXPORT __declspec(dllexport)
-#else
-  #define API_EXPORT __attribute__((visibility("default")))
-#endif
+#include "parser_manager.h"
+#include <tree_sitter/api.h>
+#include <stdlib.h>
+#include <string.h>
 
 typedef struct {
     int x;
@@ -26,13 +24,6 @@ API_EXPORT TokenStream get_all_visible_tokens(
     int x0, int y0, int x1, int y1
 );
 
-API_EXPORT TokenStream query_all_visible_tokens(
-    const char *source,
-    const char *lang_id,
-    const char *tree_sitter_query,
-    int x0, int y0, int x1, int y1
-);
-
 API_EXPORT int update(
     const char *source,
     const char *lang_id,
@@ -40,3 +31,5 @@ API_EXPORT int update(
 );
 
 API_EXPORT int get_languages(char ***language_list, int *list_size);
+
+API_EXPORT void free_token_stream(TokenStream *stream);

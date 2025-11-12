@@ -4,6 +4,12 @@ project(tree_sitter_tokenizer C)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_compile_options(-fsanitize=address -g)
+    add_link_options(-fsanitize=address)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libasan")
+endif()
+
 # --- vcpkg integration ---
 if(NOT DEFINED ENV{VCPKG_ROOT})
     message(FATAL_ERROR "VCPKG_ROOT not set. Run init.py or export it.")
@@ -27,7 +33,6 @@ endif()
 set(SRC
         src/token.c
         src/parser_manager.c
-        src/api.c
 )
 
 # define target FIRST
