@@ -125,6 +125,12 @@ def main():
     print(f"vcpkg root: {VCPKG_DIR}")
     print(f"Zig path: {ZIG_DIR}")
     print(f"Grammars: {GRAMMARS_DIR}")
+    # --- Set environment variables for future cmake builds ---
+    os.environ["VCPKG_ROOT"] = VCPKG_DIR
+    print(f"[=] Export the following before building:\n")
+    print(f"    export VCPKG_ROOT={VCPKG_DIR}")
+    print(f"    cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release")
+    print(f"    cmake --build build")
 
 if __name__ == "__main__":
     main()
