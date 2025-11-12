@@ -13,7 +13,7 @@ fn addGrammarSources(b: *std.Build, step: *std.Build.Step.Compile, dir_path: []c
                 {
                     const full_path = try std.fs.path.join(gpa, &.{dir_path, entry.name});
                     std.debug.print("[+] Adding grammar source: {s}\n", .{full_path});
-                    step.addCSourceFile(.{ .file = .{ .path = full_path }, .flags = &[_][]const u8{} });
+                    step.addCSourceFile(.{ .file = .{ .cwd_relative = full_path }, .flags = &[_][]const u8{} });
                 }
         } else if (entry.kind == .directory) {
             const subpath = try std.fs.path.join(gpa, &.{dir_path, entry.name});
@@ -40,24 +40,23 @@ pub fn build(b: *std.Build) void {
 
     const lib = b.addSharedLibrary(.{
         .name = "tree_sitter_tokenizer",
-        .root_source_file = .{ .path = "src/api.c" },
+        .root_source_file = .{ .cwd_relative = "src/api.c" },
         .target = target,
         .optimize = optimize,
     });
 
-    lib.addIncludePath(.{ .path = "src" });
+    lib.addIncludePath(.{ .cwd_relative = "src" });
 
     const vcpkg_base = "vcpkg_installed";
     const vcpkg_include = std.fmt.allocPrint(b.allocator, "{s}/{s}/include", .{ vcpkg_base, triplet }) catch unreachable;
     const vcpkg_lib = std.fmt.allocPrint(b.allocator, "{s}/{s}/lib", .{ vcpkg_base, triplet }) catch unreachable;
 
-    lib.addIncludePath(.{ .path = vcpkg_include });
-    lib.addLibraryPath(.{ .path = vcpkg_lib });
+    lib.addIncludePath(.{ .cwd_relative = vcpkg_include });
+    lib.addLibraryPath(.{ .cwd_relative = vcpkg_lib });
     lib.linkSystemLibrary("tree-sitter");
 
     const grammars_path = "grammars";
-    if (std.fs.cwd().openDir(grammars_path, .{}) catch null) |dir| {
-        dir.close();
+    if (std.fs.cwd().openDir(grammars_path, .{}) catch null) |_| {
         addGrammarSources(b, lib, grammars_path) catch {};
     } else {
         std.debug.print("[!] No grammars directory found.\n", .{});
