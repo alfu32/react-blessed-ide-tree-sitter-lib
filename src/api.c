@@ -5,24 +5,30 @@
 #include <string.h>
 #include "token.h"
 
+static void add_qualifier(Token *t, const char *q) {
+    t->qualifiers = realloc(t->qualifiers, sizeof(char*) * (t->qualifier_count + 1));
+    t->qualifiers[t->qualifier_count++] = strdup(q);
+}
+
 static void collect_tokens(TSNode node, const char *source, TokenStream *stream) {
     if (ts_node_is_null(node)) return;
 
     if (ts_node_child_count(node) == 0) {
         uint32_t start = ts_node_start_byte(node);
-        uint32_t end = ts_node_end_byte(node);
-        int len = end - start;
-        char *text = strndup(source + start, len);
+        uint32_t end   = ts_node_end_byte(node);
+        char *text = strndup(source + start, end - start);
+
         stream->tokens = realloc(stream->tokens, sizeof(Token) * (stream->count + 1));
         Token *t = &stream->tokens[stream->count++];
+        memset(t, 0, sizeof(Token));
         t->x = ts_node_start_point(node).column;
         t->y = ts_node_start_point(node).row;
         t->content = text;
-        t->qualifiers = NULL;
-        t->qualifier_count = 0;
+
+        const char *type = ts_node_type(node);
+        if (type) add_qualifier(t, type);
     } else {
-        uint32_t n = ts_node_child_count(node);
-        for (uint32_t i = 0; i < n; i++)
+        for (uint32_t i = 0; i < ts_node_child_count(node); i++)
             collect_tokens(ts_node_child(node, i), source, stream);
     }
 }
@@ -352,7 +358,7 @@ int get_languages(char ***language_list, int *list_size) {
         "ziggy_schema",
     };
     *language_list = langs;
-    *list_size = 355;
+    *list_size = 273;
     return 0;
 }
 

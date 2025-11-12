@@ -15,6 +15,15 @@ class Token(ctypes.Structure):
         ("qualifiers", ctypes.POINTER(ctypes.c_char_p)),
         ("qualifier_count", ctypes.c_int),
     ]
+    def __str__(self) -> str:
+        content = self.content.decode("utf-8") if self.content else ""
+        quals = []
+        if self.qualifiers and self.qualifier_count > 0:
+            for i in range(self.qualifier_count):
+                qptr = self.qualifiers[i]
+                if qptr:
+                    quals.append(qptr.decode("utf-8"))
+        return f"x:{self.x}, y:{self.y}, content:'{content}', qualifiers:{quals}"
 
 class TokenStream(ctypes.Structure):
     _fields_ = [("tokens", ctypes.POINTER(Token)), ("count", ctypes.c_int)]

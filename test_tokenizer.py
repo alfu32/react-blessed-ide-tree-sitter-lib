@@ -12,13 +12,13 @@ class TestTokenizer(TestCase):
     def test_c(self):
         tokens = get_all_visible_tokens(self.code_c, "c")
         print("count:", len(tokens))
-        for tok in tokens[:10]:
-            print(tok)
+        for tok in tokens:
+            print(tok.__str__())
     def test_get_languages(self):
         langs = get_languages()
         print("Available languages:", langs)
 
 
 
-# TestTokenizer().test_c()
+TestTokenizer().test_c()
 TestTokenizer().test_get_languages()
