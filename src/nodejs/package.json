@@ -1,0 +1,16 @@
+{
+  "name": "nodejs",
+  "version": "1.0.0",
+  "main": "tokenizer_api.js",
+  "scripts": {
+    "build": "node-gyp configure build"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "bindings": "^1.5.0",
+    "node-addon-api": "^8.5.0",
+    "node-gyp": "^12.1.0"
+  }
+}

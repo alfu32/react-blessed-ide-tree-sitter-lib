@@ -11,3 +11,5 @@
 /.idea/vcs.xml
 /build/
 /old/
+node_modules
+build
