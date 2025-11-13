@@ -1,16 +1,29 @@
 {
   "name": "nodejs",
   "version": "1.0.0",
-  "main": "tokenizer_api.js",
+  "main": "ts_tokenizer_api.js",
+  "gypfile": true,
+  "description": "Cross-language Tree-sitter tokenizer addon for Node.js",
   "scripts": {
-    "build": "node-gyp configure build"
+    "build": "node-gyp clean configure build",
+    "build-dyn": "BUILD_MODE=dynamic npx node-gyp clean configure build",
+    "build-static": "BUILD_MODE=static npx node-gyp clean configure build",
+    "rebuild": "npm run build-dyn"
   },
   "author": "",
-  "license": "ISC",
-  "description": "",
+  "dependencies": {
+    "node-addon-api": "^8.5.0"
+  },
   "devDependencies": {
     "bindings": "^1.5.0",
-    "node-addon-api": "^8.5.0",
     "node-gyp": "^12.1.0"
-  }
+  },
+  "files": [
+    "index.js",
+    "binding.gyp",
+    "src/",
+    "build/Release/"
+  ],
+  "license": "MIT",
+  "types": "tokenizer_api.d.ts"
 }
