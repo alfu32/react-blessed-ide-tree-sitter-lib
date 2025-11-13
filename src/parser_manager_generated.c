@@ -73,7 +73,7 @@ extern const TSLanguage *tree_sitter_xml(void);
 extern const TSLanguage *tree_sitter_yaml(void);
 extern const TSLanguage *tree_sitter_zig(void);
 
-int pm_set_lang(ParserManager *pm, const char *lang_id) {
+int source_code_parser__set_lang(source_code_parser_t *pm, const char *lang_id) {
     if (!pm || !lang_id) return -1;
     if (strcmp(lang_id, "agda") == 0) pm->lang = tree_sitter_agda();
     else if (strcmp(lang_id, "arduino") == 0) pm->lang = tree_sitter_arduino();

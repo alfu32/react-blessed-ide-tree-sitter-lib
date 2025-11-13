@@ -6,57 +6,57 @@
 #include "../../src/parser_manager.h"
 #else
 extern "C" {
-  typedef struct ParserManager ParserManager;
-  typedef struct Token {
+  typedef struct source_code_parser_t source_code_parser_t;
+  typedef struct token_t {
     int x;
     int y;
     const char *content;
     const char *node_type;
     const char *full_path;
     int full_path_length;
-  } Token;
+  } token_t;
 
   typedef struct {
-    Token *tokens;
+    token_t *tokens;
     int count;
-  } TokenStream;
+  } token_stream_t;
 
-  ParserManager *pm_get(const char *lang_id);
-  void pm_release(ParserManager *pm);
+  source_code_parser_t *source_code_parser__new(const char *lang_id);
+  void source_code_parser__free(source_code_parser_t *pm);
 
-  TokenStream *get_all_visible_tokens(
-      ParserManager *pm,
+  token_stream_t *source_code_parser__get_all_visible_tokens(
+      source_code_parser_t *pm,
       const char *source,
       int x0, int y0, int x1, int y1
   );
 
-  void free_token_stream(TokenStream *stream);
+  void token_stream__free(token_stream_t *stream);
 
   int get_languages(const char ***language_list, int *list_size);
 }
 #endif
 
 // -----------------------------------------------------------------------------
-// JS Class: ParserManager
+// JS Class: source_code_parser_t
 // -----------------------------------------------------------------------------
 class JsParserManager : public Napi::ObjectWrap<JsParserManager> {
 public:
   static Napi::FunctionReference constructor;
-  ParserManager *pm{nullptr};
+  source_code_parser_t *pm{nullptr};
 
   JsParserManager(const Napi::CallbackInfo &info) : Napi::ObjectWrap<JsParserManager>(info) {
     Napi::Env env = info.Env();
     if (info.Length() < 1 || !info[0].IsString())
       Napi::TypeError::New(env, "language id expected").ThrowAsJavaScriptException();
     std::string lang = info[0].As<Napi::String>();
-    pm = pm_get(lang.c_str());
+    pm = source_code_parser__new(lang.c_str());
     if (!pm)
-      Napi::Error::New(env, "Failed to create ParserManager").ThrowAsJavaScriptException();
+      Napi::Error::New(env, "Failed to create source_code_parser_t").ThrowAsJavaScriptException();
   }
 
   ~JsParserManager() override {
     if (pm) {
-      pm_release(pm);
+      source_code_parser__free(pm);
       pm = nullptr;
     }
   }
@@ -72,11 +72,11 @@ public:
     int x1 = info.Length() > 3 ? info[3].As<Napi::Number>().Int32Value() : 9999;
     int y1 = info.Length() > 4 ? info[4].As<Napi::Number>().Int32Value() : 9999;
 
-    TokenStream *stream = get_all_visible_tokens(pm, source.c_str(), x0, y0, x1, y1);
+    token_stream_t *stream = source_code_parser__get_all_visible_tokens(pm, source.c_str(), x0, y0, x1, y1);
     Napi::Array arr = Napi::Array::New(env, stream->count);
 
     for (int i = 0; i < stream->count; ++i) {
-      const Token &t = stream->tokens[i];
+      const token_t &t = stream->tokens[i];
 
         // Safely handle C strings
         std::string content = (t.content ? t.content : "");
@@ -97,26 +97,26 @@ public:
         arr[i] = o;
     }
 
-    free_token_stream(stream);
+    token_stream__free(stream);
     return arr;
   }
 
   Napi::Value Close(const Napi::CallbackInfo &info) {
     if (pm) {
-      pm_release(pm);
+      source_code_parser__free(pm);
       pm = nullptr;
     }
     return info.Env().Undefined();
   }
 
   static void Init(Napi::Env env, Napi::Object exports) {
-    Napi::Function func = DefineClass(env, "ParserManager", {
+    Napi::Function func = DefineClass(env, "source_code_parser_t", {
       InstanceMethod("getAllVisibleTokens", &JsParserManager::GetAllVisibleTokens),
       InstanceMethod("close", &JsParserManager::Close)
     });
     constructor = Napi::Persistent(func);
     constructor.SuppressDestruct();
-    exports.Set("ParserManager", func);
+    exports.Set("SourceCodeParser", func);
   }
 };
 

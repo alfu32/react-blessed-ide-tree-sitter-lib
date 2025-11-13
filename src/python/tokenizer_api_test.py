@@ -1,5 +1,5 @@
 import unittest
-from tokenizer_api import get_all_visible_tokens, get_languages, pm_get, pm_release
+from tokenizer_api import source_code_parser__get_all_visible_tokens, get_languages, source_code_parser__new, source_code_parser__free
 
 
 class TestTokenizer(unittest.TestCase):
@@ -10,31 +10,31 @@ class TestTokenizer(unittest.TestCase):
 
     # --- C language ---
     def test_c_tokens(self):
-        pm = pm_get("c")
+        pm = source_code_parser__new("c")
         code = """
         int main(int argc,const char **argv) {
             int x = 1;
             return x;
         }
         """
-        tokens = get_all_visible_tokens(pm, code)
+        tokens = source_code_parser__get_all_visible_tokens(pm, code)
         self.assertTrue(len(tokens) > 10)
         found_main = any("main" in t["content"] for t in tokens)
         self.assertTrue(found_main)
         for t in tokens:
             print(t)
-        pm_release(pm)
+        source_code_parser__free(pm)
 
     # --- Python language ---
     def test_python_tokens(self):
-        pm = pm_get("python")
+        pm = source_code_parser__new("python")
         code = """
         def add(a, b):
             return a + b
 
         x = add(2, 3)
         """
-        tokens = get_all_visible_tokens(pm, code)
+        tokens = source_code_parser__get_all_visible_tokens(pm, code)
         self.assertTrue(len(tokens) > 10)
         found_def = any("def" in t["content"] for t in tokens)
         found_add = any("add" in t["content"] for t in tokens)
@@ -44,7 +44,7 @@ class TestTokenizer(unittest.TestCase):
 
     # --- JavaScript language ---
     def test_javascript_tokens(self):
-        pm = pm_get("javascript")
+        pm = source_code_parser__new("javascript")
         code = """
         function sum(a, b) {
             return a + b;
@@ -52,7 +52,7 @@ class TestTokenizer(unittest.TestCase):
 
         let x = sum(1, 2);
         """
-        tokens = get_all_visible_tokens(pm, code)
+        tokens = source_code_parser__get_all_visible_tokens(pm, code)
         self.assertTrue(len(tokens) > 10)
         found_func = any("function" in t["content"] for t in tokens)
         found_sum = any("sum" in t["content"] for t in tokens)
@@ -62,14 +62,14 @@ class TestTokenizer(unittest.TestCase):
 
     # --- HTML language ---
     def test_html_tokens(self):
-        pm = pm_get("html")
+        pm = source_code_parser__new("html")
         code = """
         <html>
           <head><title>Example</title></head>
           <body><h1>Hello World</h1></body>
         </html>
         """
-        tokens = get_all_visible_tokens(pm, code)
+        tokens = source_code_parser__get_all_visible_tokens(pm, code)
         self.assertTrue(len(tokens) > 10)
         found_tag = any("html" in t["content"] for t in tokens)
         found_title = any("title" in t["content"] for t in tokens)
@@ -79,7 +79,7 @@ class TestTokenizer(unittest.TestCase):
 
     # --- JSON language ---
     def test_json_tokens(self):
-        pm = pm_get("json")
+        pm = source_code_parser__new("json")
         code = """
         {
           "name": "John",
@@ -87,7 +87,7 @@ class TestTokenizer(unittest.TestCase):
           "active": true
         }
         """
-        tokens = get_all_visible_tokens(pm, code)
+        tokens = source_code_parser__get_all_visible_tokens(pm, code)
         self.assertTrue(len(tokens) > 5)
         found_name = any("name" in t["content"] for t in tokens)
         found_true = any("true" in t["content"] for t in tokens)
@@ -97,14 +97,14 @@ class TestTokenizer(unittest.TestCase):
 
     # --- Window filtering test (C language) ---
     def test_window_filter(self):
-        pm = pm_get("c")
+        pm = source_code_parser__new("c")
         code = """
         int a = 0;
         int b = 1;
         int c = 2;
         """
-        all_tokens = get_all_visible_tokens(pm, code)
-        filtered = get_all_visible_tokens(pm, code, x0=0, y0=1, x1=80, y1=1)
+        all_tokens = source_code_parser__get_all_visible_tokens(pm, code)
+        filtered = source_code_parser__get_all_visible_tokens(pm, code, x0=0, y0=1, x1=80, y1=1)
         self.assertTrue(len(all_tokens) > len(filtered))
         for t in filtered:
             self.assertTrue(t["y"] == 1)

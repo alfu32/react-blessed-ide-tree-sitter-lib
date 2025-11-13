@@ -18,7 +18,7 @@
 typedef struct {
     const char *symbol;
     const char *canonical;
-} SymbolAlias;
+} symbol_alias_t;
 
 typedef struct {
     int x;
@@ -27,36 +27,36 @@ typedef struct {
     const char *node_type;
     const char *full_path;       // "root > node > leaf"
     int full_path_length;
-} Token;
+} token_t;
 
 typedef struct {
-    Token *tokens;
+    token_t *tokens;
     int count;
-} TokenStream;
+} token_stream_t;
 
 typedef struct {
     TSParser *parser;
     TSTree *tree;
     const TSLanguage *lang;
     const char* source;
-} ParserManager;
+} source_code_parser_t;
 
-API_EXPORT ParserManager *pm_get(const char *lang_id);
-API_EXPORT int pm_set_lang(ParserManager * pm,const char *lang_id);
-API_EXPORT void pm_release(ParserManager *pm);
+API_EXPORT source_code_parser_t *source_code_parser__new(const char *lang_id);
+API_EXPORT int source_code_parser__set_lang(source_code_parser_t * pm,const char *lang_id);
+API_EXPORT void source_code_parser__free(source_code_parser_t *pm);
 
-API_EXPORT TokenStream *get_all_visible_tokens(
-    ParserManager *pm,
+API_EXPORT token_stream_t *source_code_parser__get_all_visible_tokens(
+    source_code_parser_t *pm,
     const char *source,
     int x0, int y0, int x1, int y1
 );
 
-API_EXPORT int update(
-    ParserManager *pm,
+API_EXPORT int source_code_parser__update(
+    source_code_parser_t *pm,
     const char *source,
-    const TokenStream *stream
+    const token_stream_t *stream
 );
 
 API_EXPORT int get_languages(char ***language_list, int *list_size);
 
-API_EXPORT void free_token_stream(TokenStream *stream);
+API_EXPORT void token_stream__free(token_stream_t *stream);

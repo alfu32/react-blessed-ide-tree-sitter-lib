@@ -9,22 +9,22 @@
 void *ts_local_alloc(size_t c,size_t n) { return calloc(c,n); }
 void ts_local_free(void *p) { free(p); }
 
-ParserManager *pm_get(const char *lang_id) {
-    ParserManager *pm = ts_local_alloc(1, sizeof(ParserManager));
+source_code_parser_t *source_code_parser__new(const char *lang_id) {
+    source_code_parser_t *pm = ts_local_alloc(1, sizeof(source_code_parser_t));
     pm->parser = ts_parser_new();
-    pm_set_lang(pm,lang_id);
+    source_code_parser__set_lang(pm,lang_id);
     ts_parser_set_language(pm->parser, pm->lang);
     return pm;
 }
 
-void pm_release(ParserManager *pm) {
+void source_code_parser__free(source_code_parser_t *pm) {
     if (!pm) return;
     if (pm->tree) ts_tree_delete(pm->tree);
     if (pm->parser) ts_parser_delete(pm->parser);
     ts_local_free(pm);
 }
 
-static const SymbolAlias SYMBOL_ALIASES[] = {
+static const symbol_alias_t SYMBOL_ALIASES[] = {
     {"{", "punctuation.bracket.curly.open"},
     {"}", "punctuation.bracket.curly.close"},
     {"(", "punctuation.bracket.round.open"},
@@ -102,7 +102,7 @@ void build_full_path(char *path, char* last, size_t size, TSNode node) {
 }
 
 static void collect_tokens_filtered(TSNode node, const char *source,
-                                    TokenStream *stream,
+                                    token_stream_t *stream,
                                     int x0, int y0, int x1, int y1) {
     if (ts_node_is_null(node) || !source || !stream)
         return;
@@ -137,15 +137,15 @@ static void collect_tokens_filtered(TSNode node, const char *source,
             return;
         }
 
-        Token *new_array = realloc(stream->tokens, sizeof(Token) * (stream->count + 1));
+        token_t *new_array = realloc(stream->tokens, sizeof(token_t) * (stream->count + 1));
         if (!new_array) {
             free(text);
             return;
         }
         stream->tokens = new_array;
 
-        Token *t = &stream->tokens[stream->count++];
-        memset(t, 0, sizeof(Token));
+        token_t *t = &stream->tokens[stream->count++];
+        memset(t, 0, sizeof(token_t));
         t->x = start.column;
         t->y = start.row;
         t->content = text;
@@ -161,18 +161,18 @@ static void collect_tokens_filtered(TSNode node, const char *source,
     }
 }
 
-TokenStream *get_all_visible_tokens(
-    ParserManager *pm,
+token_stream_t *source_code_parser__get_all_visible_tokens(
+    source_code_parser_t *pm,
     const char *source,
     int x0, int y0, int x1, int y1
 ) {
-    TokenStream *stream = ts_local_alloc(1, sizeof(TokenStream));
+    token_stream_t *stream = ts_local_alloc(1, sizeof(token_stream_t));
     if (!stream || !source )
         return stream;
 
     pm->tree = ts_parser_parse_string(pm->parser, NULL, source, strlen(source));
     if (!pm->tree) {
-        pm_release(pm);
+        source_code_parser__free(pm);
         return stream;
     }
 
@@ -182,7 +182,7 @@ TokenStream *get_all_visible_tokens(
     return stream;
 }
 
-int update(ParserManager *pm, const char *source, const TokenStream *stream) {
+int source_code_parser__update(source_code_parser_t *pm, const char *source, const token_stream_t *stream) {
     if (!pm) return -1;
     pm->tree = ts_parser_parse_string(pm->parser, pm->tree, source, strlen(source));
     (void)stream;
@@ -190,15 +190,15 @@ int update(ParserManager *pm, const char *source, const TokenStream *stream) {
 }
 
 /**
- * Free all dynamic allocations in TokenStream.
+ * Free all dynamic allocations in token_stream_t.
  */
-void free_token_stream(TokenStream *stream) {
+void token_stream__free(token_stream_t *stream) {
     if (!stream || !stream->tokens) {
         ts_local_free(stream);
         return;
     }
     for (int i = 0; i < stream->count; i++) {
-        Token *t = &stream->tokens[i];
+        token_t *t = &stream->tokens[i];
         ts_local_free((void*)t->content);
         ts_local_free((void*)t->node_type);
         ts_local_free((void*)t->full_path);

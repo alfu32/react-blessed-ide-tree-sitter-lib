@@ -10,7 +10,7 @@ lib = ctypes.CDLL("libtree_sitter_tokenizer.so")
 # Define C structures
 # -----------------------------------------------------------------------------
 
-class Token(ctypes.Structure):
+class token_t(ctypes.Structure):
     _fields_ = [
         ("x", ctypes.c_int),
         ("y", ctypes.c_int),
@@ -34,13 +34,13 @@ class Token(ctypes.Structure):
             "full_path_length": self.full_path_length,
         }
 
-class TokenStream(ctypes.Structure):
+class token_stream_t(ctypes.Structure):
     _fields_ = [
-        ("tokens", ctypes.POINTER(Token)),
+        ("tokens", ctypes.POINTER(token_t)),
         ("count", ctypes.c_int),
     ]
 
-class ParserManager(ctypes.Structure):
+class source_code_parser_t(ctypes.Structure):
     pass
 
 
@@ -48,49 +48,49 @@ class ParserManager(ctypes.Structure):
 # Function prototypes
 # -----------------------------------------------------------------------------
 
-lib.pm_get.argtypes = [ctypes.c_char_p]
-lib.pm_get.restype = ctypes.POINTER(ParserManager)
+lib.source_code_parser__new.argtypes = [ctypes.c_char_p]
+lib.source_code_parser__new.restype = ctypes.POINTER(source_code_parser_t)
 
-lib.pm_set_lang.argtypes = [ctypes.POINTER(ParserManager), ctypes.c_char_p]
-lib.pm_set_lang.restype = ctypes.c_int
+lib.source_code_parser__set_lang.argtypes = [ctypes.POINTER(source_code_parser_t), ctypes.c_char_p]
+lib.source_code_parser__set_lang.restype = ctypes.c_int
 
-lib.pm_release.argtypes = [ctypes.POINTER(ParserManager)]
-lib.pm_release.restype = None
+lib.source_code_parser__free.argtypes = [ctypes.POINTER(source_code_parser_t)]
+lib.source_code_parser__free.restype = None
 
-lib.get_all_visible_tokens.argtypes = [
-    ctypes.POINTER(ParserManager),
+lib.source_code_parser__get_all_visible_tokens.argtypes = [
+    ctypes.POINTER(source_code_parser_t),
     ctypes.c_char_p,
     ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
 ]
-lib.get_all_visible_tokens.restype = ctypes.POINTER(TokenStream)
+lib.source_code_parser__get_all_visible_tokens.restype = ctypes.POINTER(token_stream_t)
 
-lib.update.argtypes = [
-    ctypes.POINTER(ParserManager),
+lib.source_code_parser__update.argtypes = [
+    ctypes.POINTER(source_code_parser_t),
     ctypes.c_char_p,
-    ctypes.POINTER(TokenStream),
+    ctypes.POINTER(token_stream_t),
 ]
-lib.update.restype = ctypes.c_int
+lib.source_code_parser__update.restype = ctypes.c_int
 
 lib.get_languages.argtypes = [ctypes.POINTER(ctypes.POINTER(ctypes.c_char_p)), ctypes.POINTER(ctypes.c_int)]
 lib.get_languages.restype = ctypes.c_int
 
-lib.free_token_stream.argtypes = [ctypes.POINTER(TokenStream)]
-lib.free_token_stream.restype = None
+lib.token_stream__free.argtypes = [ctypes.POINTER(token_stream_t)]
+lib.token_stream__free.restype = None
 
 
 # -----------------------------------------------------------------------------
 # High-level Python wrappers
 # -----------------------------------------------------------------------------
 
-def pm_get(lang_id: str):
-    pm = lib.pm_get(lang_id.encode("utf-8"))
+def source_code_parser__new(lang_id: str):
+    pm = lib.source_code_parser__new(lang_id.encode("utf-8"))
     if not pm:
         raise RuntimeError(f"Failed to create ParserManager for {lang_id}")
     return pm
 
-def pm_release(pm):
+def source_code_parser__free(pm):
     if pm:
-        lib.pm_release(pm)
+        lib.source_code_parser__free(pm)
 
 def get_languages():
     arr = ctypes.POINTER(ctypes.c_char_p)()
@@ -100,8 +100,8 @@ def get_languages():
         return []
     return [arr[i].decode("utf-8") for i in range(n.value)]
 
-def get_all_visible_tokens(pm, source: str, x0=0, y0=0, x1=9999, y1=9999):
-    stream_ptr = lib.get_all_visible_tokens(
+def source_code_parser__get_all_visible_tokens(pm, source: str, x0=0, y0=0, x1=9999, y1=9999):
+    stream_ptr = lib.source_code_parser__get_all_visible_tokens(
         pm, source.encode("utf-8"), x0, y0, x1, y1
     )
     if not stream_ptr:
@@ -116,9 +116,9 @@ def get_all_visible_tokens(pm, source: str, x0=0, y0=0, x1=9999, y1=9999):
         tokens.append(t.toMap())
 
     # now it's safe to free
-    lib.free_token_stream(stream_ptr)
+    lib.token_stream__free(stream_ptr)
     return tokens
 
-def update(pm, source: str, token_stream=None):
+def source_code_parser__update(pm, source: str, token_stream=None):
     ts_ptr = ctypes.pointer(token_stream) if token_stream else None
-    return lib.update(pm, source.encode("utf-8"), ts_ptr)
+    return lib.source_code_parser__update(pm, source.encode("utf-8"), ts_ptr)
