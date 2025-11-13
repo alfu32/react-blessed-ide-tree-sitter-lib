@@ -31,8 +31,8 @@ endif()
 
 # --- source files ---
 set(SRC
-        src/token.c
         src/parser_manager.c
+        src/parser_manager_generated.c
 )
 
 # define target FIRST
@@ -287,6 +287,19 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/grammars/tree-sitter-csv/csv/src/parser.c")
                 "${CMAKE_SOURCE_DIR}/grammars/tree-sitter-markdown/tree-sitter-markdown-inline/src/scanner.c"
         )
     endif()
+
+    # message(STATUS "Manually including OpenSCAD grammar (grammars/tree-sitter-openscad/tree_sitter/src)")
+    # target_include_directories(tree_sitter_tokenizer PRIVATE
+    #         "${CMAKE_SOURCE_DIR}/grammars/tree-sitter-openscad/tree_sitter/src"
+    # )
+    # target_sources(tree_sitter_tokenizer PRIVATE
+    #         "${CMAKE_SOURCE_DIR}/grammars/tree-sitter-openscad/tree_sitter/src/parser.c"
+    # )
+    # if(EXISTS "${CMAKE_SOURCE_DIR}/grammars/tree-sitter-openscad/tree_sitter/src/scanner.c")
+    #     target_sources(tree_sitter_tokenizer PRIVATE
+    #             "${CMAKE_SOURCE_DIR}/grammars/tree-sitter-openscad/tree_sitter/src/scanner.c"
+    #     )
+    # endif()
 
     message(STATUS "Manually including Problog grammar (grammars/tree-sitter-problog/grammars/problog/src)")
     target_include_directories(tree_sitter_tokenizer PRIVATE

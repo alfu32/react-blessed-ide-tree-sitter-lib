@@ -1,529 +1,14 @@
-#include "parser_manager.h"
+#include <tree_sitter/api.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-
-// registry of languages can be expanded dynamically
-extern const TSLanguage *tree_sitter_ada();
-extern const TSLanguage *tree_sitter_agda();
-extern const TSLanguage *tree_sitter_angular();
-// extern const TSLanguage *tree_sitter_apex();
-extern const TSLanguage *tree_sitter_arduino();
-// extern const TSLanguage *tree_sitter_asciidoc();
-// extern const TSLanguage *tree_sitter_asciidoc_inline();
-extern const TSLanguage *tree_sitter_asm();
-// extern const TSLanguage *tree_sitter_astro();
-extern const TSLanguage *tree_sitter_authzed();
-extern const TSLanguage *tree_sitter_awk();
-extern const TSLanguage *tree_sitter_bash();
-extern const TSLanguage *tree_sitter_bass();
-// extern const TSLanguage *tree_sitter_bazelrc();
-extern const TSLanguage *tree_sitter_beancount();
-extern const TSLanguage *tree_sitter_bibtex();
-extern const TSLanguage *tree_sitter_bicep();
-// extern const TSLanguage *tree_sitter_bison();
-extern const TSLanguage *tree_sitter_bitbake();
-// extern const TSLanguage *tree_sitter_blueprint();
-// extern const TSLanguage *tree_sitter_bp();
-extern const TSLanguage *tree_sitter_brightscript();
-extern const TSLanguage *tree_sitter_c();
-extern const TSLanguage *tree_sitter_c_sharp();
-extern const TSLanguage *tree_sitter_caddy();
-extern const TSLanguage *tree_sitter_capnp();
-extern const TSLanguage *tree_sitter_cedar();
-extern const TSLanguage *tree_sitter_cfengine();
-extern const TSLanguage *tree_sitter_circom();
-// extern const TSLanguage *tree_sitter_clojure();
-extern const TSLanguage *tree_sitter_cmake();
-// extern const TSLanguage *tree_sitter_cobol();
-extern const TSLanguage *tree_sitter_comment();
-extern const TSLanguage *tree_sitter_commonlisp();
-extern const TSLanguage *tree_sitter_context();
-extern const TSLanguage *tree_sitter_cooklang();
-extern const TSLanguage *tree_sitter_corn();
-extern const TSLanguage *tree_sitter_cpon();
-extern const TSLanguage *tree_sitter_cpp();
-extern const TSLanguage *tree_sitter_cql();
-extern const TSLanguage *tree_sitter_crystal();
-extern const TSLanguage *tree_sitter_css();
-extern const TSLanguage *tree_sitter_csv();
-extern const TSLanguage *tree_sitter_cuda();
-extern const TSLanguage *tree_sitter_cue();
-extern const TSLanguage *tree_sitter_cylc();
-extern const TSLanguage *tree_sitter_d();
-extern const TSLanguage *tree_sitter_dart();
-extern const TSLanguage *tree_sitter_desktop();
-extern const TSLanguage *tree_sitter_devicetree();
-extern const TSLanguage *tree_sitter_dhall();
-extern const TSLanguage *tree_sitter_diff();
-extern const TSLanguage *tree_sitter_djot();
-extern const TSLanguage *tree_sitter_dockerfile();
-extern const TSLanguage *tree_sitter_doxygen();
-extern const TSLanguage *tree_sitter_dtd();
-extern const TSLanguage *tree_sitter_earthfile();
-// extern const TSLanguage *tree_sitter_ebnf();
-extern const TSLanguage *tree_sitter_editorconfig();
-extern const TSLanguage *tree_sitter_eds();
-extern const TSLanguage *tree_sitter_elisp();
-extern const TSLanguage *tree_sitter_elixir();
-extern const TSLanguage *tree_sitter_elm();
-extern const TSLanguage *tree_sitter_embedded_template();
-// extern const TSLanguage *tree_sitter_enforce();
-extern const TSLanguage *tree_sitter_erlang();
-// extern const TSLanguage *tree_sitter_facility();
-extern const TSLanguage *tree_sitter_faust();
-extern const TSLanguage *tree_sitter_firrtl();
-// extern const TSLanguage *tree_sitter_fish();
-extern const TSLanguage *tree_sitter_fluentbit();
-extern const TSLanguage *tree_sitter_foam();
-extern const TSLanguage *tree_sitter_fortran();
-// extern const TSLanguage *tree_sitter_fsh();
-extern const TSLanguage *tree_sitter_fsharp();
-// extern const TSLanguage *tree_sitter_fsharp_signature();
-extern const TSLanguage *tree_sitter_func();
-extern const TSLanguage *tree_sitter_gap();
-extern const TSLanguage *tree_sitter_gaptst();
-extern const TSLanguage *tree_sitter_gdscript();
-// extern const TSLanguage *tree_sitter_git_config();
-extern const TSLanguage *tree_sitter_git_rebase();
-extern const TSLanguage *tree_sitter_gitattributes();
-extern const TSLanguage *tree_sitter_gitcommit();
-extern const TSLanguage *tree_sitter_gleam();
-extern const TSLanguage *tree_sitter_glsl();
-extern const TSLanguage *tree_sitter_gn();
-extern const TSLanguage *tree_sitter_gnuplot();
-extern const TSLanguage *tree_sitter_go();
-extern const TSLanguage *tree_sitter_goctl();
-extern const TSLanguage *tree_sitter_godot_resource();
-extern const TSLanguage *tree_sitter_gomod();
-extern const TSLanguage *tree_sitter_gosum();
-// extern const TSLanguage *tree_sitter_gotmpl();
-extern const TSLanguage *tree_sitter_gpg();
-extern const TSLanguage *tree_sitter_gren();
-extern const TSLanguage *tree_sitter_groovy();
-extern const TSLanguage *tree_sitter_groq();
-extern const TSLanguage *tree_sitter_gstlaunch();
-extern const TSLanguage *tree_sitter_gularen();
-extern const TSLanguage *tree_sitter_hare();
-extern const TSLanguage *tree_sitter_haskell();
-extern const TSLanguage *tree_sitter_haxe();
-extern const TSLanguage *tree_sitter_hcl();
-extern const TSLanguage *tree_sitter_heex();
-extern const TSLanguage *tree_sitter_hlsl();
-extern const TSLanguage *tree_sitter_hlsplaylist();
-// extern const TSLanguage *tree_sitter_hoon();
-extern const TSLanguage *tree_sitter_blade();
-extern const TSLanguage *tree_sitter_htmldjango();
-// extern const TSLanguage *tree_sitter_http();
-extern const TSLanguage *tree_sitter_hurl();
-extern const TSLanguage *tree_sitter_hyprlang();
-extern const TSLanguage *tree_sitter_idl();
-extern const TSLanguage *tree_sitter_idris();
-extern const TSLanguage *tree_sitter_ini();
-extern const TSLanguage *tree_sitter_inko();
-// extern const TSLanguage *tree_sitter_janet_simple();
-extern const TSLanguage *tree_sitter_java();
-extern const TSLanguage *tree_sitter_javadoc();
-extern const TSLanguage *tree_sitter_javascript();
-extern const TSLanguage *tree_sitter_jq();
-extern const TSLanguage *tree_sitter_jsdoc();
-extern const TSLanguage *tree_sitter_json();
-extern const TSLanguage *tree_sitter_json5();
-extern const TSLanguage *tree_sitter_julia();
-extern const TSLanguage *tree_sitter_kcl();
-extern const TSLanguage *tree_sitter_kconfig();
-extern const TSLanguage *tree_sitter_kdl();
-extern const TSLanguage *tree_sitter_koka();
-extern const TSLanguage *tree_sitter_kotlin();
-extern const TSLanguage *tree_sitter_koto();
-extern const TSLanguage *tree_sitter_lalrpop();
-// extern const TSLanguage *tree_sitter_ledger();
-extern const TSLanguage *tree_sitter_leo();
-extern const TSLanguage *tree_sitter_linkerscript();
-extern const TSLanguage *tree_sitter_liquidsoap();
-extern const TSLanguage *tree_sitter_llvm();
-extern const TSLanguage *tree_sitter_llvm_mir();
-extern const TSLanguage *tree_sitter_lua();
-extern const TSLanguage *tree_sitter_luadoc();
-extern const TSLanguage *tree_sitter_luap();
-extern const TSLanguage *tree_sitter_luau();
-extern const TSLanguage *tree_sitter_magik();
-extern const TSLanguage *tree_sitter_mail();
-extern const TSLanguage *tree_sitter_make();
-extern const TSLanguage *tree_sitter_markdown();
-extern const TSLanguage *tree_sitter_markdown_inline();
-extern const TSLanguage *tree_sitter_mermaid();
-extern const TSLanguage *tree_sitter_mlir();
-extern const TSLanguage *tree_sitter_modelica();
-extern const TSLanguage *tree_sitter_muttrc();
-extern const TSLanguage *tree_sitter_nginx();
-extern const TSLanguage *tree_sitter_nickel();
-extern const TSLanguage *tree_sitter_nim();
-extern const TSLanguage *tree_sitter_nois();
-extern const TSLanguage *tree_sitter_nqc();
-extern const TSLanguage *tree_sitter_objc();
-extern const TSLanguage *tree_sitter_ocaml();
-extern const TSLanguage *tree_sitter_ocaml_interface();
-extern const TSLanguage *tree_sitter_ocaml_type();
-extern const TSLanguage *tree_sitter_ocamllex();
-extern const TSLanguage *tree_sitter_pascal();
-extern const TSLanguage *tree_sitter_pem();
-extern const TSLanguage *tree_sitter_perl();
-extern const TSLanguage *tree_sitter_pgn();
-extern const TSLanguage *tree_sitter_php();
-extern const TSLanguage *tree_sitter_php_only();
-extern const TSLanguage *tree_sitter_phpdoc();
-extern const TSLanguage *tree_sitter_pioasm();
-extern const TSLanguage *tree_sitter_pkl();
-extern const TSLanguage *tree_sitter_po();
-extern const TSLanguage *tree_sitter_poe_filter();
-extern const TSLanguage *tree_sitter_pony();
-extern const TSLanguage *tree_sitter_powershell();
-extern const TSLanguage *tree_sitter_printf();
-extern const TSLanguage *tree_sitter_prisma();
-extern const TSLanguage *tree_sitter_prolog();
-extern const TSLanguage *tree_sitter_problog();
-extern const TSLanguage *tree_sitter_properties();
-extern const TSLanguage *tree_sitter_psv();
-// extern const TSLanguage *tree_sitter_pug();
-extern const TSLanguage *tree_sitter_puppet();
-extern const TSLanguage *tree_sitter_purescript();
-extern const TSLanguage *tree_sitter_pymanifest();
-extern const TSLanguage *tree_sitter_python();
-extern const TSLanguage *tree_sitter_ql();
-extern const TSLanguage *tree_sitter_qmljs();
-extern const TSLanguage *tree_sitter_query();
-extern const TSLanguage *tree_sitter_r();
-extern const TSLanguage *tree_sitter_racket();
-extern const TSLanguage *tree_sitter_ralph();
-extern const TSLanguage *tree_sitter_rasi();
-extern const TSLanguage *tree_sitter_razor();
-extern const TSLanguage *tree_sitter_rbs();
-// extern const TSLanguage *tree_sitter_re2c();
-extern const TSLanguage *tree_sitter_readline();
-extern const TSLanguage *tree_sitter_regex();
-extern const TSLanguage *tree_sitter_requirements();
-extern const TSLanguage *tree_sitter_rescript();
-extern const TSLanguage *tree_sitter_robot();
-extern const TSLanguage *tree_sitter_robots();
-extern const TSLanguage *tree_sitter_roc();
-extern const TSLanguage *tree_sitter_ron();
-extern const TSLanguage *tree_sitter_rst();
-extern const TSLanguage *tree_sitter_ruby();
-extern const TSLanguage *tree_sitter_runescript();
-extern const TSLanguage *tree_sitter_rust();
-extern const TSLanguage *tree_sitter_scala();
-extern const TSLanguage *tree_sitter_scheme();
-extern const TSLanguage *tree_sitter_sdml();
-// extern const TSLanguage *tree_sitter_sflog();
-extern const TSLanguage *tree_sitter_slang();
-extern const TSLanguage *tree_sitter_slim();
-extern const TSLanguage *tree_sitter_slint();
-extern const TSLanguage *tree_sitter_smithy();
-extern const TSLanguage *tree_sitter_sml();
-extern const TSLanguage *tree_sitter_snakemake();
-extern const TSLanguage *tree_sitter_solidity();
-// extern const TSLanguage *tree_sitter_soql();
-// extern const TSLanguage *tree_sitter_sosl();
-// extern const TSLanguage *tree_sitter_sourcepawn();
-extern const TSLanguage *tree_sitter_sql_bigquery();
-extern const TSLanguage *tree_sitter_squirrel();
-extern const TSLanguage *tree_sitter_ssh_client_config();
-extern const TSLanguage *tree_sitter_ssh_config();
-extern const TSLanguage *tree_sitter_stan();
-extern const TSLanguage *tree_sitter_starlark();
-// extern const TSLanguage *tree_sitter_supercollider();
-// extern const TSLanguage *tree_sitter_superhtml();
-extern const TSLanguage *tree_sitter_svelte();
-extern const TSLanguage *tree_sitter_sway();
-extern const TSLanguage *tree_sitter_systemtap();
-extern const TSLanguage *tree_sitter_systemverilog();
-extern const TSLanguage *tree_sitter_t32();
-extern const TSLanguage *tree_sitter_tablegen();
-extern const TSLanguage *tree_sitter_tact();
-extern const TSLanguage *tree_sitter_tcl();
-extern const TSLanguage *tree_sitter_teal();
-extern const TSLanguage *tree_sitter_templ();
-extern const TSLanguage *tree_sitter_tera();
-extern const TSLanguage *tree_sitter_thrift();
-extern const TSLanguage *tree_sitter_tlaplus();
-extern const TSLanguage *tree_sitter_tmux();
-extern const TSLanguage *tree_sitter_toml();
-extern const TSLanguage *tree_sitter_tsv();
-extern const TSLanguage *tree_sitter_tsx();
-extern const TSLanguage *tree_sitter_turtle();
-extern const TSLanguage *tree_sitter_typescript();
-extern const TSLanguage *tree_sitter_typespec();
-extern const TSLanguage *tree_sitter_udev();
-// extern const TSLanguage *tree_sitter_unison();
-// extern const TSLanguage *tree_sitter_usd();
-extern const TSLanguage *tree_sitter_v();
-// extern const TSLanguage *tree_sitter_vbnet();
-// extern const TSLanguage *tree_sitter_vento();
-extern const TSLanguage *tree_sitter_verilog();
-extern const TSLanguage *tree_sitter_vhdl();
-extern const TSLanguage *tree_sitter_vhs();
-extern const TSLanguage *tree_sitter_vim();
-extern const TSLanguage *tree_sitter_vimdoc();
-extern const TSLanguage *tree_sitter_vrl();
-// extern const TSLanguage *tree_sitter_vue();
-extern const TSLanguage *tree_sitter_wgsl_bevy();
-extern const TSLanguage *tree_sitter_wing();
-extern const TSLanguage *tree_sitter_xcompose();
-extern const TSLanguage *tree_sitter_xml();
-extern const TSLanguage *tree_sitter_xresources();
-extern const TSLanguage *tree_sitter_yaml();
-extern const TSLanguage *tree_sitter_yuck();
-extern const TSLanguage *tree_sitter_zathurarc();
-extern const TSLanguage *tree_sitter_zeek();
-extern const TSLanguage *tree_sitter_zig();
-// extern const TSLanguage *tree_sitter_ziggy();
-// extern const TSLanguage *tree_sitter_ziggy_schema();
+#include <stdio.h>
+#include "parser_manager.h"
 
 ParserManager *pm_get(const char *lang_id) {
     ParserManager *pm = calloc(1, sizeof(ParserManager));
     pm->parser = ts_parser_new();
-    if(      0==strcmp( lang_id,               "ada") ) pm->lang=tree_sitter_ada();
-    else if( 0==strcmp( lang_id,              "agda") ) pm->lang=tree_sitter_agda();
-    else if( 0==strcmp( lang_id,           "angular") ) pm->lang=tree_sitter_angular();
-    else if( 0==strcmp( lang_id,           "arduino") ) pm->lang=tree_sitter_arduino();
-    else if( 0==strcmp( lang_id,               "asm") ) pm->lang=tree_sitter_asm();
-    else if( 0==strcmp( lang_id,           "authzed") ) pm->lang=tree_sitter_authzed();
-    else if( 0==strcmp( lang_id,               "awk") ) pm->lang=tree_sitter_awk();
-    else if( 0==strcmp( lang_id,              "bash") ) pm->lang=tree_sitter_bash();
-    else if( 0==strcmp( lang_id,              "bass") ) pm->lang=tree_sitter_bass();
-    else if( 0==strcmp( lang_id,         "beancount") ) pm->lang=tree_sitter_beancount();
-    else if( 0==strcmp( lang_id,            "bibtex") ) pm->lang=tree_sitter_bibtex();
-    else if( 0==strcmp( lang_id,             "bicep") ) pm->lang=tree_sitter_bicep();
-    else if( 0==strcmp( lang_id,           "bitbake") ) pm->lang=tree_sitter_bitbake();
-    // else if( 0==strcmp( lang_id,                "bp") ) pm->lang=tree_sitter_bp();
-    else if( 0==strcmp( lang_id,      "brightscript") ) pm->lang=tree_sitter_brightscript();
-    else if( 0==strcmp( lang_id,                 "c") ) pm->lang=tree_sitter_c();
-    else if( 0==strcmp( lang_id,           "c_sharp") ) pm->lang=tree_sitter_c_sharp();
-    else if( 0==strcmp( lang_id,             "caddy") ) pm->lang=tree_sitter_caddy();
-    else if( 0==strcmp( lang_id,             "capnp") ) pm->lang=tree_sitter_capnp();
-    else if( 0==strcmp( lang_id,             "cedar") ) pm->lang=tree_sitter_cedar();
-    else if( 0==strcmp( lang_id,          "cfengine") ) pm->lang=tree_sitter_cfengine();
-    else if( 0==strcmp( lang_id,            "circom") ) pm->lang=tree_sitter_circom();
-    else if( 0==strcmp( lang_id,             "cmake") ) pm->lang=tree_sitter_cmake();
-    else if( 0==strcmp( lang_id,           "comment") ) pm->lang=tree_sitter_comment();
-    else if( 0==strcmp( lang_id,        "commonlisp") ) pm->lang=tree_sitter_commonlisp();
-    else if( 0==strcmp( lang_id,           "context") ) pm->lang=tree_sitter_context();
-    else if( 0==strcmp( lang_id,          "cooklang") ) pm->lang=tree_sitter_cooklang();
-    else if( 0==strcmp( lang_id,              "corn") ) pm->lang=tree_sitter_corn();
-    else if( 0==strcmp( lang_id,              "cpon") ) pm->lang=tree_sitter_cpon();
-    else if( 0==strcmp( lang_id,               "cpp") ) pm->lang=tree_sitter_cpp();
-    else if( 0==strcmp( lang_id,               "cql") ) pm->lang=tree_sitter_cql();
-    else if( 0==strcmp( lang_id,           "crystal") ) pm->lang=tree_sitter_crystal();
-    else if( 0==strcmp( lang_id,               "css") ) pm->lang=tree_sitter_css();
-    else if( 0==strcmp( lang_id,               "csv") ) pm->lang=tree_sitter_csv();
-    else if( 0==strcmp( lang_id,              "cuda") ) pm->lang=tree_sitter_cuda();
-    else if( 0==strcmp( lang_id,               "cue") ) pm->lang=tree_sitter_cue();
-    else if( 0==strcmp( lang_id,              "cylc") ) pm->lang=tree_sitter_cylc();
-    else if( 0==strcmp( lang_id,                 "d") ) pm->lang=tree_sitter_d();
-    else if( 0==strcmp( lang_id,              "dart") ) pm->lang=tree_sitter_dart();
-    else if( 0==strcmp( lang_id,           "desktop") ) pm->lang=tree_sitter_desktop();
-    else if( 0==strcmp( lang_id,        "devicetree") ) pm->lang=tree_sitter_devicetree();
-    else if( 0==strcmp( lang_id,             "dhall") ) pm->lang=tree_sitter_dhall();
-    else if( 0==strcmp( lang_id,              "diff") ) pm->lang=tree_sitter_diff();
-    else if( 0==strcmp( lang_id,              "djot") ) pm->lang=tree_sitter_djot();
-    else if( 0==strcmp( lang_id,        "dockerfile") ) pm->lang=tree_sitter_dockerfile();
-    else if( 0==strcmp( lang_id,           "doxygen") ) pm->lang=tree_sitter_doxygen();
-    else if( 0==strcmp( lang_id,               "dtd") ) pm->lang=tree_sitter_dtd();
-    else if( 0==strcmp( lang_id,         "earthfile") ) pm->lang=tree_sitter_earthfile();
-    else if( 0==strcmp( lang_id,      "editorconfig") ) pm->lang=tree_sitter_editorconfig();
-    else if( 0==strcmp( lang_id,               "eds") ) pm->lang=tree_sitter_eds();
-    else if( 0==strcmp( lang_id,             "elisp") ) pm->lang=tree_sitter_elisp();
-    else if( 0==strcmp( lang_id,            "elixir") ) pm->lang=tree_sitter_elixir();
-    else if( 0==strcmp( lang_id,               "elm") ) pm->lang=tree_sitter_elm();
-    else if( 0==strcmp( lang_id, "embedded_template") ) pm->lang=tree_sitter_embedded_template();
-    else if( 0==strcmp( lang_id,            "erlang") ) pm->lang=tree_sitter_erlang();
-    else if( 0==strcmp( lang_id,             "faust") ) pm->lang=tree_sitter_faust();
-    else if( 0==strcmp( lang_id,            "firrtl") ) pm->lang=tree_sitter_firrtl();
-    else if( 0==strcmp( lang_id,         "fluentbit") ) pm->lang=tree_sitter_fluentbit();
-    else if( 0==strcmp( lang_id,              "foam") ) pm->lang=tree_sitter_foam();
-    else if( 0==strcmp( lang_id,           "fortran") ) pm->lang=tree_sitter_fortran();
-    else if( 0==strcmp( lang_id,            "fsharp") ) pm->lang=tree_sitter_fsharp();
-    else if( 0==strcmp( lang_id,              "func") ) pm->lang=tree_sitter_func();
-    else if( 0==strcmp( lang_id,               "gap") ) pm->lang=tree_sitter_gap();
-    else if( 0==strcmp( lang_id,            "gaptst") ) pm->lang=tree_sitter_gaptst();
-    else if( 0==strcmp( lang_id,          "gdscript") ) pm->lang=tree_sitter_gdscript();
-    else if( 0==strcmp( lang_id,        "git_rebase") ) pm->lang=tree_sitter_git_rebase();
-    else if( 0==strcmp( lang_id,     "gitattributes") ) pm->lang=tree_sitter_gitattributes();
-    else if( 0==strcmp( lang_id,         "gitcommit") ) pm->lang=tree_sitter_gitcommit();
-    else if( 0==strcmp( lang_id,             "gleam") ) pm->lang=tree_sitter_gleam();
-    else if( 0==strcmp( lang_id,              "glsl") ) pm->lang=tree_sitter_glsl();
-    else if( 0==strcmp( lang_id,                "gn") ) pm->lang=tree_sitter_gn();
-    else if( 0==strcmp( lang_id,           "gnuplot") ) pm->lang=tree_sitter_gnuplot();
-    else if( 0==strcmp( lang_id,                "go") ) pm->lang=tree_sitter_go();
-    else if( 0==strcmp( lang_id,             "goctl") ) pm->lang=tree_sitter_goctl();
-    else if( 0==strcmp( lang_id,    "godot_resource") ) pm->lang=tree_sitter_godot_resource();
-    else if( 0==strcmp( lang_id,             "gomod") ) pm->lang=tree_sitter_gomod();
-    else if( 0==strcmp( lang_id,             "gosum") ) pm->lang=tree_sitter_gosum();
-    else if( 0==strcmp( lang_id,               "gpg") ) pm->lang=tree_sitter_gpg();
-    else if( 0==strcmp( lang_id,              "gren") ) pm->lang=tree_sitter_gren();
-    else if( 0==strcmp( lang_id,            "groovy") ) pm->lang=tree_sitter_groovy();
-    else if( 0==strcmp( lang_id,              "groq") ) pm->lang=tree_sitter_groq();
-    else if( 0==strcmp( lang_id,         "gstlaunch") ) pm->lang=tree_sitter_gstlaunch();
-    else if( 0==strcmp( lang_id,           "gularen") ) pm->lang=tree_sitter_gularen();
-    else if( 0==strcmp( lang_id,              "hare") ) pm->lang=tree_sitter_hare();
-    else if( 0==strcmp( lang_id,           "haskell") ) pm->lang=tree_sitter_haskell();
-    else if( 0==strcmp( lang_id,              "haxe") ) pm->lang=tree_sitter_haxe();
-    else if( 0==strcmp( lang_id,               "hcl") ) pm->lang=tree_sitter_hcl();
-    else if( 0==strcmp( lang_id,              "heex") ) pm->lang=tree_sitter_heex();
-    else if( 0==strcmp( lang_id,              "hlsl") ) pm->lang=tree_sitter_hlsl();
-    else if( 0==strcmp( lang_id,       "hlsplaylist") ) pm->lang=tree_sitter_hlsplaylist();
-    else if( 0==strcmp( lang_id,              "html") ) pm->lang=tree_sitter_blade();
-    else if( 0==strcmp( lang_id,        "htmldjango") ) pm->lang=tree_sitter_htmldjango();
-    else if( 0==strcmp( lang_id,              "hurl") ) pm->lang=tree_sitter_hurl();
-    else if( 0==strcmp( lang_id,          "hyprlang") ) pm->lang=tree_sitter_hyprlang();
-    else if( 0==strcmp( lang_id,               "idl") ) pm->lang=tree_sitter_idl();
-    else if( 0==strcmp( lang_id,             "idris") ) pm->lang=tree_sitter_idris();
-    else if( 0==strcmp( lang_id,               "ini") ) pm->lang=tree_sitter_ini();
-    else if( 0==strcmp( lang_id,              "inko") ) pm->lang=tree_sitter_inko();
-    else if( 0==strcmp( lang_id,              "java") ) pm->lang=tree_sitter_java();
-    else if( 0==strcmp( lang_id,           "javadoc") ) pm->lang=tree_sitter_javadoc();
-    else if( 0==strcmp( lang_id,        "javascript") ) pm->lang=tree_sitter_javascript();
-    else if( 0==strcmp( lang_id,                "jq") ) pm->lang=tree_sitter_jq();
-    else if( 0==strcmp( lang_id,             "jsdoc") ) pm->lang=tree_sitter_jsdoc();
-    else if( 0==strcmp( lang_id,              "json") ) pm->lang=tree_sitter_json();
-    else if( 0==strcmp( lang_id,             "json5") ) pm->lang=tree_sitter_json5();
-    else if( 0==strcmp( lang_id,             "julia") ) pm->lang=tree_sitter_julia();
-    else if( 0==strcmp( lang_id,               "kcl") ) pm->lang=tree_sitter_kcl();
-    else if( 0==strcmp( lang_id,           "kconfig") ) pm->lang=tree_sitter_kconfig();
-    else if( 0==strcmp( lang_id,               "kdl") ) pm->lang=tree_sitter_kdl();
-    else if( 0==strcmp( lang_id,              "koka") ) pm->lang=tree_sitter_koka();
-    else if( 0==strcmp( lang_id,            "kotlin") ) pm->lang=tree_sitter_kotlin();
-    else if( 0==strcmp( lang_id,              "koto") ) pm->lang=tree_sitter_koto();
-    else if( 0==strcmp( lang_id,           "lalrpop") ) pm->lang=tree_sitter_lalrpop();
-    else if( 0==strcmp( lang_id,               "leo") ) pm->lang=tree_sitter_leo();
-    else if( 0==strcmp( lang_id,      "linkerscript") ) pm->lang=tree_sitter_linkerscript();
-    else if( 0==strcmp( lang_id,        "liquidsoap") ) pm->lang=tree_sitter_liquidsoap();
-    else if( 0==strcmp( lang_id,              "llvm") ) pm->lang=tree_sitter_llvm();
-    else if( 0==strcmp( lang_id,          "llvm_mir") ) pm->lang=tree_sitter_llvm_mir();
-    else if( 0==strcmp( lang_id,               "lua") ) pm->lang=tree_sitter_lua();
-    else if( 0==strcmp( lang_id,            "luadoc") ) pm->lang=tree_sitter_luadoc();
-    else if( 0==strcmp( lang_id,              "luap") ) pm->lang=tree_sitter_luap();
-    else if( 0==strcmp( lang_id,              "luau") ) pm->lang=tree_sitter_luau();
-    else if( 0==strcmp( lang_id,             "magik") ) pm->lang=tree_sitter_magik();
-    else if( 0==strcmp( lang_id,              "mail") ) pm->lang=tree_sitter_mail();
-    else if( 0==strcmp( lang_id,              "make") ) pm->lang=tree_sitter_make();
-    else if( 0==strcmp( lang_id,          "markdown") ) pm->lang=tree_sitter_markdown();
-    else if( 0==strcmp( lang_id,   "markdown_inline") ) pm->lang=tree_sitter_markdown_inline();
-    else if( 0==strcmp( lang_id,           "mermaid") ) pm->lang=tree_sitter_mermaid();
-    else if( 0==strcmp( lang_id,              "mlir") ) pm->lang=tree_sitter_mlir();
-    else if( 0==strcmp( lang_id,          "modelica") ) pm->lang=tree_sitter_modelica();
-    else if( 0==strcmp( lang_id,            "muttrc") ) pm->lang=tree_sitter_muttrc();
-    else if( 0==strcmp( lang_id,             "nginx") ) pm->lang=tree_sitter_nginx();
-    else if( 0==strcmp( lang_id,            "nickel") ) pm->lang=tree_sitter_nickel();
-    else if( 0==strcmp( lang_id,               "nim") ) pm->lang=tree_sitter_nim();
-    else if( 0==strcmp( lang_id,              "nois") ) pm->lang=tree_sitter_nois();
-    else if( 0==strcmp( lang_id,               "nqc") ) pm->lang=tree_sitter_nqc();
-    else if( 0==strcmp( lang_id,              "objc") ) pm->lang=tree_sitter_objc();
-    else if( 0==strcmp( lang_id,             "ocaml") ) pm->lang=tree_sitter_ocaml();
-    else if( 0==strcmp( lang_id,   "ocaml_interface") ) pm->lang=tree_sitter_ocaml_interface();
-    else if( 0==strcmp( lang_id,        "ocaml_type") ) pm->lang=tree_sitter_ocaml_type();
-    else if( 0==strcmp( lang_id,          "ocamllex") ) pm->lang=tree_sitter_ocamllex();
-    else if( 0==strcmp( lang_id,            "pascal") ) pm->lang=tree_sitter_pascal();
-    else if( 0==strcmp( lang_id,               "pem") ) pm->lang=tree_sitter_pem();
-    else if( 0==strcmp( lang_id,              "perl") ) pm->lang=tree_sitter_perl();
-    else if( 0==strcmp( lang_id,               "pgn") ) pm->lang=tree_sitter_pgn();
-    else if( 0==strcmp( lang_id,               "php5") ) pm->lang=tree_sitter_php();
-    else if( 0==strcmp( lang_id,               "php") ) pm->lang=tree_sitter_php_only();
-    else if( 0==strcmp( lang_id,            "phpdoc") ) pm->lang=tree_sitter_phpdoc();
-    else if( 0==strcmp( lang_id,            "pioasm") ) pm->lang=tree_sitter_pioasm();
-    else if( 0==strcmp( lang_id,               "pkl") ) pm->lang=tree_sitter_pkl();
-    else if( 0==strcmp( lang_id,                "po") ) pm->lang=tree_sitter_po();
-    else if( 0==strcmp( lang_id,        "poe_filter") ) pm->lang=tree_sitter_poe_filter();
-    else if( 0==strcmp( lang_id,              "pony") ) pm->lang=tree_sitter_pony();
-    else if( 0==strcmp( lang_id,        "powershell") ) pm->lang=tree_sitter_powershell();
-    else if( 0==strcmp( lang_id,            "printf") ) pm->lang=tree_sitter_printf();
-    else if( 0==strcmp( lang_id,            "prisma") ) pm->lang=tree_sitter_prisma();
-    else if( 0==strcmp( lang_id,           "problog") ) pm->lang=tree_sitter_problog();
-    else if( 0==strcmp( lang_id,            "prolog") ) pm->lang=tree_sitter_prolog();
-    else if( 0==strcmp( lang_id,        "properties") ) pm->lang=tree_sitter_properties();
-    else if( 0==strcmp( lang_id,               "psv") ) pm->lang=tree_sitter_psv();
-    else if( 0==strcmp( lang_id,            "puppet") ) pm->lang=tree_sitter_puppet();
-    else if( 0==strcmp( lang_id,        "purescript") ) pm->lang=tree_sitter_purescript();
-    else if( 0==strcmp( lang_id,        "pymanifest") ) pm->lang=tree_sitter_pymanifest();
-    else if( 0==strcmp( lang_id,            "python") ) pm->lang=tree_sitter_python();
-    else if( 0==strcmp( lang_id,                "ql") ) pm->lang=tree_sitter_ql();
-    else if( 0==strcmp( lang_id,             "qmljs") ) pm->lang=tree_sitter_qmljs();
-    else if( 0==strcmp( lang_id,             "query") ) pm->lang=tree_sitter_query();
-    else if( 0==strcmp( lang_id,                 "r") ) pm->lang=tree_sitter_r();
-    else if( 0==strcmp( lang_id,            "racket") ) pm->lang=tree_sitter_racket();
-    else if( 0==strcmp( lang_id,             "ralph") ) pm->lang=tree_sitter_ralph();
-    else if( 0==strcmp( lang_id,              "rasi") ) pm->lang=tree_sitter_rasi();
-    else if( 0==strcmp( lang_id,             "razor") ) pm->lang=tree_sitter_razor();
-    else if( 0==strcmp( lang_id,               "rbs") ) pm->lang=tree_sitter_rbs();
-    else if( 0==strcmp( lang_id,          "readline") ) pm->lang=tree_sitter_readline();
-    else if( 0==strcmp( lang_id,             "regex") ) pm->lang=tree_sitter_regex();
-    else if( 0==strcmp( lang_id,      "requirements") ) pm->lang=tree_sitter_requirements();
-    else if( 0==strcmp( lang_id,          "rescript") ) pm->lang=tree_sitter_rescript();
-    else if( 0==strcmp( lang_id,             "robot") ) pm->lang=tree_sitter_robot();
-    else if( 0==strcmp( lang_id,            "robots") ) pm->lang=tree_sitter_robots();
-    else if( 0==strcmp( lang_id,               "roc") ) pm->lang=tree_sitter_roc();
-    else if( 0==strcmp( lang_id,               "ron") ) pm->lang=tree_sitter_ron();
-    else if( 0==strcmp( lang_id,               "rst") ) pm->lang=tree_sitter_rst();
-    else if( 0==strcmp( lang_id,              "ruby") ) pm->lang=tree_sitter_ruby();
-    else if( 0==strcmp( lang_id,        "runescript") ) pm->lang=tree_sitter_runescript();
-    else if( 0==strcmp( lang_id,              "rust") ) pm->lang=tree_sitter_rust();
-    else if( 0==strcmp( lang_id,             "scala") ) pm->lang=tree_sitter_scala();
-    else if( 0==strcmp( lang_id,            "scheme") ) pm->lang=tree_sitter_scheme();
-    else if( 0==strcmp( lang_id,              "sdml") ) pm->lang=tree_sitter_sdml();
-    else if( 0==strcmp( lang_id,             "slang") ) pm->lang=tree_sitter_slang();
-    else if( 0==strcmp( lang_id,              "slim") ) pm->lang=tree_sitter_slim();
-    else if( 0==strcmp( lang_id,             "slint") ) pm->lang=tree_sitter_slint();
-    else if( 0==strcmp( lang_id,            "smithy") ) pm->lang=tree_sitter_smithy();
-    else if( 0==strcmp( lang_id,               "sml") ) pm->lang=tree_sitter_sml();
-    else if( 0==strcmp( lang_id,         "snakemake") ) pm->lang=tree_sitter_snakemake();
-    else if( 0==strcmp( lang_id,          "solidity") ) pm->lang=tree_sitter_solidity();
-    else if( 0==strcmp( lang_id,      "sql_bigquery") ) pm->lang=tree_sitter_sql_bigquery();
-    else if( 0==strcmp( lang_id,          "squirrel") ) pm->lang=tree_sitter_squirrel();
-    else if( 0==strcmp( lang_id, "ssh_client_config") ) pm->lang=tree_sitter_ssh_client_config();
-    else if( 0==strcmp( lang_id,        "ssh_config") ) pm->lang=tree_sitter_ssh_config();
-    else if( 0==strcmp( lang_id,              "stan") ) pm->lang=tree_sitter_stan();
-    else if( 0==strcmp( lang_id,          "starlark") ) pm->lang=tree_sitter_starlark();
-    else if( 0==strcmp( lang_id,            "svelte") ) pm->lang=tree_sitter_svelte();
-    else if( 0==strcmp( lang_id,              "sway") ) pm->lang=tree_sitter_sway();
-    else if( 0==strcmp( lang_id,         "systemtap") ) pm->lang=tree_sitter_systemtap();
-    else if( 0==strcmp( lang_id,     "systemverilog") ) pm->lang=tree_sitter_systemverilog();
-    else if( 0==strcmp( lang_id,               "t32") ) pm->lang=tree_sitter_t32();
-    else if( 0==strcmp( lang_id,          "tablegen") ) pm->lang=tree_sitter_tablegen();
-    else if( 0==strcmp( lang_id,              "tact") ) pm->lang=tree_sitter_tact();
-    else if( 0==strcmp( lang_id,               "tcl") ) pm->lang=tree_sitter_tcl();
-    else if( 0==strcmp( lang_id,              "teal") ) pm->lang=tree_sitter_teal();
-    else if( 0==strcmp( lang_id,             "templ") ) pm->lang=tree_sitter_templ();
-    else if( 0==strcmp( lang_id,              "tera") ) pm->lang=tree_sitter_tera();
-    else if( 0==strcmp( lang_id,            "thrift") ) pm->lang=tree_sitter_thrift();
-    else if( 0==strcmp( lang_id,           "tlaplus") ) pm->lang=tree_sitter_tlaplus();
-    else if( 0==strcmp( lang_id,              "tmux") ) pm->lang=tree_sitter_tmux();
-    else if( 0==strcmp( lang_id,              "toml") ) pm->lang=tree_sitter_toml();
-    else if( 0==strcmp( lang_id,               "tsv") ) pm->lang=tree_sitter_tsv();
-    else if( 0==strcmp( lang_id,               "tsx") ) pm->lang=tree_sitter_tsx();
-    else if( 0==strcmp( lang_id,            "turtle") ) pm->lang=tree_sitter_turtle();
-    else if( 0==strcmp( lang_id,        "typescript") ) pm->lang=tree_sitter_typescript();
-    else if( 0==strcmp( lang_id,          "typespec") ) pm->lang=tree_sitter_typespec();
-    else if( 0==strcmp( lang_id,              "udev") ) pm->lang=tree_sitter_udev();
-    else if( 0==strcmp( lang_id,                 "v") ) pm->lang=tree_sitter_v();
-    else if( 0==strcmp( lang_id,           "verilog") ) pm->lang=tree_sitter_verilog();
-    else if( 0==strcmp( lang_id,              "vhdl") ) pm->lang=tree_sitter_vhdl();
-    else if( 0==strcmp( lang_id,               "vhs") ) pm->lang=tree_sitter_vhs();
-    else if( 0==strcmp( lang_id,               "vim") ) pm->lang=tree_sitter_vim();
-    else if( 0==strcmp( lang_id,            "vimdoc") ) pm->lang=tree_sitter_vimdoc();
-    else if( 0==strcmp( lang_id,               "vrl") ) pm->lang=tree_sitter_vrl();
-    else if( 0==strcmp( lang_id,         "wgsl_bevy") ) pm->lang=tree_sitter_wgsl_bevy();
-    else if( 0==strcmp( lang_id,              "wing") ) pm->lang=tree_sitter_wing();
-    else if( 0==strcmp( lang_id,          "xcompose") ) pm->lang=tree_sitter_xcompose();
-    else if( 0==strcmp( lang_id,               "xml") ) pm->lang=tree_sitter_xml();
-    else if( 0==strcmp( lang_id,        "xresources") ) pm->lang=tree_sitter_xresources();
-    else if( 0==strcmp( lang_id,              "yaml") ) pm->lang=tree_sitter_yaml();
-    else if( 0==strcmp( lang_id,              "yuck") ) pm->lang=tree_sitter_yuck();
-    else if( 0==strcmp( lang_id,         "zathurarc") ) pm->lang=tree_sitter_zathurarc();
-    else if( 0==strcmp( lang_id,              "zeek") ) pm->lang=tree_sitter_zeek();
-    else if( 0==strcmp( lang_id,               "zig") ) pm->lang=tree_sitter_zig();
-    else
-        return NULL;
-
+    pm_set_lang(pm,lang_id);
     ts_parser_set_language(pm->parser, pm->lang);
     return pm;
 }
@@ -533,4 +18,107 @@ void pm_release(ParserManager *pm) {
     if (pm->tree) ts_tree_delete(pm->tree);
     if (pm->parser) ts_parser_delete(pm->parser);
     free(pm);
+}
+
+static char *build_full_path(TSNode node) {
+    // Build reverse chain first
+    const char *names[128];
+    int count = 0;
+
+    TSNode cur = node;
+    while (!ts_node_is_null(cur) && count < 128) {
+        names[count++] = ts_node_type(cur);
+        cur = ts_node_parent(cur);
+    }
+
+    // Estimate length
+    size_t total = 0;
+    for (int i = count - 1; i >= 0; i--) {
+        total += strlen(names[i]) + 3; // " > "
+    }
+
+    char *path = malloc(total + 1);
+    if (!path) return NULL;
+
+    path[0] = '\0';
+    for (int i = count - 1; i >= 0; i--) {
+        strcat(path, names[i]);
+        if (i > 0) strcat(path, " > ");
+    }
+    return path;
+}
+
+static void collect_tokens_filtered(TSNode node, const char *source,
+                                    TokenStream *stream,
+                                    int x0, int y0, int x1, int y1) {
+    if (ts_node_is_null(node)) return;
+
+    TSPoint start = ts_node_start_point(node);
+    TSPoint end   = ts_node_end_point(node);
+    if ((int)end.row < y0 || (int)start.row > y1) return;
+    if ((int)end.column < x0 || (int)start.column > x1) return;
+
+    uint32_t children = ts_node_child_count(node);
+
+    if (children == 0) {
+        uint32_t sb = ts_node_start_byte(node);
+        uint32_t eb = ts_node_end_byte(node);
+        if (eb <= sb) return;
+
+        char *text = strndup(source + sb, eb - sb);
+        char *path = build_full_path(node);
+
+        stream->tokens = realloc(stream->tokens, sizeof(Token) * (stream->count + 1));
+        Token *t = &stream->tokens[stream->count++];
+        memset(t, 0, sizeof(Token));
+        t->x = start.column;
+        t->y = start.row;
+        t->content = text;
+        t->full_path = path;
+        t->full_path_length = (int)strlen(path);
+    } else {
+        for (uint32_t i = 0; i < children; i++)
+            collect_tokens_filtered(ts_node_child(node, i), source, stream, x0, y0, x1, y1);
+    }
+}
+
+TokenStream* get_all_visible_tokens(const char *source,
+                                   const char *lang_id,
+                                   int x0, int y0, int x1, int y1) {
+    TokenStream *stream = calloc(1, sizeof(TokenStream));
+    ParserManager *pm = pm_get(lang_id);
+    if (!pm || !source) return stream;
+
+    pm->tree = ts_parser_parse_string(pm->parser, NULL, source, strlen(source));
+    TSNode root = ts_tree_root_node(pm->tree);
+
+    collect_tokens_filtered(root, source, stream, x0, y0, x1, y1);
+    pm_release(pm);
+    return stream;
+}
+
+int update(const char *source, const char *lang_id, const TokenStream *stream) {
+    ParserManager *pm = pm_get(lang_id);
+    if (!pm) return -1;
+    pm->tree = ts_parser_parse_string(pm->parser, pm->tree, source, strlen(source));
+    pm_release(pm);
+    (void)stream;
+    return 0;
+}
+
+/**
+ * Free all dynamic allocations in TokenStream.
+ */
+void free_token_stream(TokenStream *stream) {
+    if (!stream || !stream->tokens) {
+        free(stream);
+        return;
+    }
+    for (int i = 0; i < stream->count; i++) {
+        Token *t = &stream->tokens[i];
+        free((void*)t->content);
+        free((void*)t->full_path);
+    }
+    free(stream->tokens);
+    free(stream);
 }

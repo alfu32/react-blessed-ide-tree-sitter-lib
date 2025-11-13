@@ -70,42 +70,25 @@ lib.free_token_stream.restype = None
 # --- Python-friendly wrapper functions ---
 
 def get_all_visible_tokens(source: str, lang_id: str, x0=0, y0=0, x1=9999, y1=9999):
-    """Return list of Token objects visible in a window."""
     stream = lib.get_all_visible_tokens(
-        source.encode("utf-8"),
-        lang_id.encode("utf-8"),
-        x0,
-        y0,
-        x1,
-        y1,
+        source.encode("utf-8"), lang_id.encode("utf-8"),
+        x0, y0, x1, y1
     )
+
+    # Explicitly keep a reference to avoid freeing a temporary
+    # sref = TokenStream(stream.tokens, stream.count)
+
     tokens = []
-    # Deep copy for safe lifetime after free
     for i in range(stream.count):
         t = stream.tokens[i]
-        tok = Token()
-        tok.x = t.x
-        tok.y = t.y
-        tok.content = ctypes.c_char_p(
-            t.content.decode("utf-8").encode("utf-8") if t.content else b""
-        )
-        quals = []
-        if t.qualifiers and t.qualifier_count > 0:
-            for j in range(t.qualifier_count):
-                qptr = t.qualifiers[j]
-                if qptr:
-                    quals.append(qptr.decode("utf-8"))
-        tok.qualifier_count = len(quals)
-        if quals:
-            arr = (ctypes.c_char_p * len(quals))(
-                *[q.encode("utf-8") for q in quals]
-            )
-            tok.qualifiers = ctypes.cast(arr, ctypes.POINTER(ctypes.c_char_p))
-        else:
-            tok.qualifiers = None
-        tokens.append(tok)
+        tokens.append({
+            "x": t.x,
+            "y": t.y,
+            "content": t.content.decode("utf-8") if t.content else "",
+            "full_path": t.full_path.decode("utf-8") if t.full_path else "",
+        })
 
-    lib.free_token_stream(ctypes.byref(stream))
+    # lib.free_token_stream(ctypes.pointer(sref))
     return tokens
 
 
@@ -130,7 +113,7 @@ def get_languages() -> list[str]:
         ptr = lang_list[i]
         if ptr:
             langs.append(ptr.decode("utf-8"))
-    ctypes.CDLL(None).free(lang_list)
+    # ctypes.CDLL(None).free(lang_list)
     return langs
 
 class ParserManager(ctypes.Structure):
@@ -143,6 +126,9 @@ class ParserManager(ctypes.Structure):
 
 lib.pm_get.argtypes = [ctypes.c_char_p]
 lib.pm_get.restype = ctypes.POINTER(ParserManager)
+
+lib.pm_set_lang.argtypes = [ctypes.c_char_p]
+lib.pm_set_lang.restype = ctypes.c_int
 
 lib.pm_release.argtypes = [ctypes.POINTER(ParserManager)]
 lib.pm_release.restype = None

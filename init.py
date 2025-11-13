@@ -93,7 +93,7 @@ def clone_grammars(entries):
     for e in entries:
         name = e["NAME"].strip()
         url = e["URL"].strip()
-        dl_flag = e["DOWNLOAD"].strip().lower()
+        dl_flag = e["MINIMAL"].strip().lower()
         target = os.path.join(GRAMMARS_DIR, f"tree-sitter-{name}")
         if dl_flag in ("true", "yes", "1"):
             if os.path.isdir(target):
@@ -108,6 +108,63 @@ def clone_grammars(entries):
             print(f"[?] Skipping {name} (marked maybe)")
         else:
             print(f"[-] Skipping {name} (DOWNLOAD={dl_flag})")
+def generate_parser_manager_lists(csv_path="dl-libs.csv"):
+    entries = []
+    with open(csv_path, newline="") as f:
+        reader = csv.DictReader(f, delimiter=";")
+        for row in reader:
+            entries.append(row)
+
+    extern_const = []
+    ifs = []
+    language_names_list = []
+
+    for e in entries:
+        name = e["NAME"].strip()
+        url = e["URL"].strip()
+        dl_flag = e.get("DOWNLOAD", "").strip().lower()  # from your CSV header
+        if dl_flag in ("true", "yes", "1"):
+            extern_const.append(f"extern const TSLanguage *tree_sitter_{name}(void);")
+            ifs.append(f'if (strcmp(lang_id, "{name}") == 0) pm->lang = tree_sitter_{name}();')
+            language_names_list.append(f'"{name}"')
+
+    ifs.append("return -1;")
+
+    source = f"""\
+#include <string.h>
+#include <tree_sitter/api.h>
+#include "parser_manager.h"
+
+// Registry of all compiled-in grammars
+{"\n".join(extern_const)}
+
+int pm_set_lang(ParserManager *pm, const char *lang_id) {{
+    if (!pm || !lang_id) return -1;
+    {"\n    else ".join(ifs)}
+    return 0;
+}}
+
+static const char *langs[] = {{
+    {", ".join(language_names_list)}
+}};
+
+/**
+ * Enumerate supported languages.
+ */
+int get_languages(char ***language_list, int *list_size) {{
+    if (!language_list || !list_size) return -1;
+    *list_size = sizeof(langs) / sizeof(langs[0]);
+    *language_list = (char **)langs;
+    return 0;
+}}
+"""
+
+    out_path = os.path.join("src", "parser_manager_generated.c")
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    with open(out_path, "w", encoding="utf-8") as genc:
+        genc.write(source)
+
+    print(f"[+] Generated {out_path} with {len(language_names_list)} languages.")
 
 def main():
     if not os.path.exists(CSV_PATH):
@@ -120,6 +177,7 @@ def main():
     #ensure_zig()
     #bind_zig()
     clone_grammars(grammars)
+    generate_parser_manager_lists()
 
     print("[✓] Initialization complete.")
     print(f"vcpkg root: {VCPKG_DIR}")
