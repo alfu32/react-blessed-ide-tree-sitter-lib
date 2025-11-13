@@ -36,15 +36,15 @@ API_EXPORT ParserManager *pm_get(const char *lang_id);
 API_EXPORT int pm_set_lang(ParserManager * pm,const char *lang_id);
 API_EXPORT void pm_release(ParserManager *pm);
 
-API_EXPORT TokenStream* get_all_visible_tokens(
+API_EXPORT TokenStream *get_all_visible_tokens(
+    ParserManager *pm,
     const char *source,
-    const char *lang_id,
     int x0, int y0, int x1, int y1
 );
 
 API_EXPORT int update(
+    ParserManager *pm,
     const char *source,
-    const char *lang_id,
     const TokenStream *stream
 );
 

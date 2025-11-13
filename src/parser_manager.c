@@ -24,10 +24,13 @@ void pm_release(ParserManager *pm) {
 }
 
 static char *build_full_path(TSNode node) {
+    if (ts_node_is_null(node)) {
+        return strdup("null-node");
+    }
+
     const char *names[128];
     int count = 0;
 
-    // walk upward to root safely
     TSNode cur = node;
     while (!ts_node_is_null(cur) && count < 128) {
         const char *type = ts_node_type(cur);
@@ -36,24 +39,21 @@ static char *build_full_path(TSNode node) {
         cur = ts_node_parent(cur);
     }
 
-    // nothing found
-    if (count == 0) {
-        char *empty = strdup("unknown");
-        return empty;
+    if (count == 0) return strdup("unknown");
+
+    size_t total = 0;
+    for (int i = count - 1; i >= 0; i--) {
+        total += strlen(names[i]);
+        if (i > 0) total += 1; // "."
     }
 
-    // compute total length
-    size_t total = 0;
-    for (int i = count - 1; i >= 0; i--)
-        total += strlen(names[i]) + (i ? 3 : 0); // " > "
-
     char *path = ts_local_alloc(total + 1,sizeof(char));
-    if (!path) return strdup("alloc_error");
+    if (!path) return strdup("alloc-fail");
 
     path[0] = '\0';
     for (int i = count - 1; i >= 0; i--) {
         strcat(path, names[i]);
-        if (i > 0) strcat(path, " > ");
+        if (i > 0) strcat(path, ".");
     }
     return path;
 }
@@ -61,10 +61,12 @@ static char *build_full_path(TSNode node) {
 static void collect_tokens_filtered(TSNode node, const char *source,
                                     TokenStream *stream,
                                     int x0, int y0, int x1, int y1) {
-    if (ts_node_is_null(node)) return;
+    if (ts_node_is_null(node) || !source || !stream)
+        return;
 
     const char *type = ts_node_type(node);
-    if (!type) return;
+    if (!type)
+        return;
 
     TSPoint start = ts_node_start_point(node);
     TSPoint end   = ts_node_end_point(node);
@@ -73,24 +75,30 @@ static void collect_tokens_filtered(TSNode node, const char *source,
     if ((int)end.column < x0 || (int)start.column > x1) return;
 
     uint32_t children = ts_node_child_count(node);
+    size_t src_len = strlen(source);
+
     if (children == 0) {
         uint32_t sb = ts_node_start_byte(node);
         uint32_t eb = ts_node_end_byte(node);
-        if (eb <= sb) return;
-
-        // validate byte offsets
-        size_t source_len = strlen(source);
-        if (sb >= source_len) return;
-        if (eb > source_len) eb = (uint32_t)source_len;
+        if (sb >= src_len || eb <= sb) return;
+        if (eb > src_len) eb = (uint32_t)src_len;
 
         char *text = strndup(source + sb, eb - sb);
         if (!text) return;
 
         char *path = build_full_path(node);
-        if (!path) path = strdup("unknown");
+        if (!path) {
+            free(text);
+            return;
+        }
 
-        stream->tokens = realloc(stream->tokens, sizeof(Token) * (stream->count + 1));
-        if (!stream->tokens) return;
+        Token *new_array = realloc(stream->tokens, sizeof(Token) * (stream->count + 1));
+        if (!new_array) {
+            free(text);
+            free(path);
+            return;
+        }
+        stream->tokens = new_array;
 
         Token *t = &stream->tokens[stream->count++];
         memset(t, 0, sizeof(Token));
@@ -108,26 +116,30 @@ static void collect_tokens_filtered(TSNode node, const char *source,
     }
 }
 
-TokenStream* get_all_visible_tokens(const char *source,
-                                   const char *lang_id,
-                                   int x0, int y0, int x1, int y1) {
+TokenStream *get_all_visible_tokens(
+    ParserManager *pm,
+    const char *source,
+    int x0, int y0, int x1, int y1
+) {
     TokenStream *stream = ts_local_alloc(1, sizeof(TokenStream));
-    ParserManager *pm = pm_get(lang_id);
-    if (!pm || !source) return stream;
+    if (!stream || !source )
+        return stream;
 
     pm->tree = ts_parser_parse_string(pm->parser, NULL, source, strlen(source));
-    TSNode root = ts_tree_root_node(pm->tree);
+    if (!pm->tree) {
+        pm_release(pm);
+        return stream;
+    }
 
-    collect_tokens_filtered(root, source, stream, x0, y0, x1, y1);
-    pm_release(pm);
+    TSNode root = ts_tree_root_node(pm->tree);
+    if (!ts_node_is_null(root))
+        collect_tokens_filtered(root, source, stream, x0, y0, x1, y1);
     return stream;
 }
 
-int update(const char *source, const char *lang_id, const TokenStream *stream) {
-    ParserManager *pm = pm_get(lang_id);
+int update(ParserManager *pm, const char *source, const TokenStream *stream) {
     if (!pm) return -1;
     pm->tree = ts_parser_parse_string(pm->parser, pm->tree, source, strlen(source));
-    pm_release(pm);
     (void)stream;
     return 0;
 }
