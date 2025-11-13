@@ -15,16 +15,21 @@ class Token(ctypes.Structure):
         ("x", ctypes.c_int),
         ("y", ctypes.c_int),
         ("content", ctypes.c_char_p),
+        ("node_type", ctypes.c_char_p),
         ("full_path", ctypes.c_char_p),
         ("full_path_length", ctypes.c_int),
     ]
 
 
     def toMap(self) -> dict[str, object]:
+        content = self.content.decode("utf-8") if self.content else ""
+        node_type = self.node_type.decode("utf-8") if self.node_type else ""
         return {
             "x": self.x,
             "y": self.y,
-            "content": self.content.decode("utf-8") if self.content else "",
+            "x1": self.x + len(content),
+            "content": content,
+            "node_type": node_type,
             "full_path": self.full_path.decode("utf-8") if self.full_path else "",
             "full_path_length": self.full_path_length,
         }
@@ -108,12 +113,7 @@ def get_all_visible_tokens(pm, source: str, x0=0, y0=0, x1=9999, y1=9999):
     # COPY all values *before* freeing
     for i in range(stream.count):
         t = stream.tokens[i]
-        tokens.append({
-            "x": t.x,
-            "y": t.y,
-            "content": t.content.decode("utf-8") if t.content else "",
-            "full_path": t.full_path.decode("utf-8") if t.full_path else "",
-        })
+        tokens.append(t.toMap())
 
     # now it's safe to free
     lib.free_token_stream(stream_ptr)

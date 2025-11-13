@@ -11,11 +11,20 @@
   #define API_EXPORT __attribute__((visibility("default")))
 #endif
 
+// ---------------------------------------------------------------------
+// Canonical symbol mapping (LSP + Tree-sitter highlight conventions)
+// ---------------------------------------------------------------------
+
+typedef struct {
+    const char *symbol;
+    const char *canonical;
+} SymbolAlias;
 
 typedef struct {
     int x;
     int y;
     const char *content;
+    const char *node_type;
     const char *full_path;       // "root > node > leaf"
     int full_path_length;
 } Token;

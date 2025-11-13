@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include "parser_manager.h"
 
+
 void *ts_local_alloc(size_t c,size_t n) { return calloc(c,n); }
 void ts_local_free(void *p) { free(p); }
 
@@ -23,39 +24,81 @@ void pm_release(ParserManager *pm) {
     ts_local_free(pm);
 }
 
-static char *build_full_path(TSNode node) {
-    if (ts_node_is_null(node)) {
-        return strdup("null-node");
+static const SymbolAlias SYMBOL_ALIASES[] = {
+    {"{", "punctuation.bracket.curly.open"},
+    {"}", "punctuation.bracket.curly.close"},
+    {"(", "punctuation.bracket.round.open"},
+    {")", "punctuation.bracket.round.close"},
+    {"[", "punctuation.bracket.square.open"},
+    {"]", "punctuation.bracket.square.close"},
+    {";", "punctuation.delimiter.semicolon"},
+    {",", "punctuation.delimiter.comma"},
+    {"\"", "punctuation.delimiter.quot"},
+    {"'", "punctuation.delimiter.single_quot"},
+    {".", "punctuation.accessor"},
+    {"=", "operator.assignment"},
+    {"+", "operator.arithmetic.plus"},
+    {"-", "operator.arithmetic.minus"},
+    {"*", "operator.arithmetic.multiply"},
+    {"/", "operator.arithmetic.divide"},
+    {"<", "operator.comparison.less"},
+    {">", "operator.comparison.greater"},
+    {"!", "operator.logical.not"},
+    {"&", "operator.logical.and"},
+    {"|", "operator.logical.or"},
+    {"?", "operator.ternary"},
+    {":", "punctuation.delimiter.colon"},
+    {"~", "operator.bitwise.not"},
+    {"%", "operator.arithmetic.modulo"},
+    {NULL, NULL}
+};
+const char *canonical_symbol_name(const char *sym) {
+    for (int i = 0; SYMBOL_ALIASES[i].symbol; i++) {
+        if (strcmp(SYMBOL_ALIASES[i].symbol, sym) == 0)
+            return SYMBOL_ALIASES[i].canonical;
+    }
+    return NULL;
+}
+
+// ---------------------------------------------------------------------
+// Path builder
+// ---------------------------------------------------------------------
+void append_node_path(char *path, char* last,size_t size, TSNode node) {
+    const char *node_type = ts_node_type(node);
+
+    // Determine final name (symbol alias or node type)
+    const char *final_name = NULL;
+    if (!ts_node_is_named(node)) {
+        final_name = canonical_symbol_name(node_type);
+        if (!final_name)
+            return;  // skip punctuation we don't recognize
+    } else {
+        final_name = node_type;
     }
 
-    const char *names[128];
-    int count = 0;
+    // Sanitize underscores and create CSS-safe form directly into `last`
+    size_t i = 0;
+    for (; final_name[i] && i < size - 1; ++i)
+        last[i] = (final_name[i] == '_') ? '-' : final_name[i];
+    last[i] = '\0';
 
-    TSNode cur = node;
-    while (!ts_node_is_null(cur) && count < 128) {
-        const char *type = ts_node_type(cur);
-        if (!type) break;
-        names[count++] = type;
-        cur = ts_node_parent(cur);
+    // Append separator and name into path
+    if (strlen(path) > 0)
+        strncat(path, " > ", size - strlen(path) - 1);
+
+    strncat(path, last, size - strlen(path) - 1);
+}
+
+// ---------------------------------------------------------------------
+// Recursive path generator
+// ---------------------------------------------------------------------
+
+void build_full_path(char *path, char* last, size_t size, TSNode node) {
+    TSNode parent = ts_node_parent(node);
+    if (!ts_node_is_null(parent)) {
+        build_full_path(path, last, size, parent);
     }
-
-    if (count == 0) return strdup("unknown");
-
-    size_t total = 0;
-    for (int i = count - 1; i >= 0; i--) {
-        total += strlen(names[i]);
-        if (i > 0) total += 1; // "."
-    }
-
-    char *path = ts_local_alloc(total + 1,sizeof(char));
-    if (!path) return strdup("alloc-fail");
-
-    path[0] = '\0';
-    for (int i = count - 1; i >= 0; i--) {
-        strcat(path, names[i]);
-        if (i > 0) strcat(path, ".");
-    }
-    return path;
+    append_node_path(path, last, size, node);
 }
 
 static void collect_tokens_filtered(TSNode node, const char *source,
@@ -64,8 +107,8 @@ static void collect_tokens_filtered(TSNode node, const char *source,
     if (ts_node_is_null(node) || !source || !stream)
         return;
 
-    const char *type = ts_node_type(node);
-    if (!type)
+    const char *node_type = ts_node_type(node);
+    if (!node_type)
         return;
 
     TSPoint start = ts_node_start_point(node);
@@ -86,8 +129,10 @@ static void collect_tokens_filtered(TSNode node, const char *source,
         char *text = strndup(source + sb, eb - sb);
         if (!text) return;
 
-        char *path = build_full_path(node);
-        if (!path) {
+        char full_path[1024] = {0};
+        char qualifier[1024] = {0};
+        build_full_path(full_path, qualifier, sizeof(full_path), node);
+        if (!sizeof(full_path)) {
             free(text);
             return;
         }
@@ -95,7 +140,6 @@ static void collect_tokens_filtered(TSNode node, const char *source,
         Token *new_array = realloc(stream->tokens, sizeof(Token) * (stream->count + 1));
         if (!new_array) {
             free(text);
-            free(path);
             return;
         }
         stream->tokens = new_array;
@@ -105,8 +149,9 @@ static void collect_tokens_filtered(TSNode node, const char *source,
         t->x = start.column;
         t->y = start.row;
         t->content = text;
-        t->full_path = path;
-        t->full_path_length = (int)strlen(path);
+        t->node_type = strdup(qualifier);
+        t->full_path = strdup(full_path);
+        t->full_path_length = strlen(full_path);
     } else {
         for (uint32_t i = 0; i < children; i++) {
             TSNode child = ts_node_child(node, i);
@@ -155,6 +200,7 @@ void free_token_stream(TokenStream *stream) {
     for (int i = 0; i < stream->count; i++) {
         Token *t = &stream->tokens[i];
         ts_local_free((void*)t->content);
+        ts_local_free((void*)t->node_type);
         ts_local_free((void*)t->full_path);
     }
     ts_local_free(stream->tokens);

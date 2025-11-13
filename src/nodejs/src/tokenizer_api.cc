@@ -11,6 +11,7 @@ extern "C" {
     int x;
     int y;
     const char *content;
+    const char *node_type;
     const char *full_path;
     int full_path_length;
   } Token;
@@ -76,13 +77,24 @@ public:
 
     for (int i = 0; i < stream->count; ++i) {
       const Token &t = stream->tokens[i];
-      Napi::Object o = Napi::Object::New(env);
-      o.Set("x", t.x);
-      o.Set("y", t.y);
-      o.Set("content", t.content ? t.content : "");
-      o.Set("full_path", t.full_path ? t.full_path : "");
-      o.Set("full_path_length", t.full_path_length);
-      arr[i] = o;
+
+        // Safely handle C strings
+        std::string content = (t.content ? t.content : "");
+        std::string node_type = (t.node_type ? t.node_type : "");
+        std::string full_path = (t.full_path ? t.full_path : "");
+
+        // Create JS object
+        Napi::Object o = Napi::Object::New(env);
+
+        o.Set("x", t.x);
+        o.Set("y", t.y);
+        o.Set("x1", t.x + static_cast<int>(content.length()));
+        o.Set("content", Napi::String::New(env, content));
+        o.Set("node_type", Napi::String::New(env, node_type));
+        o.Set("full_path", Napi::String::New(env, full_path));
+        o.Set("full_path_length", t.full_path_length);
+
+        arr[i] = o;
     }
 
     free_token_stream(stream);
