@@ -3,6 +3,8 @@ project(tree_sitter_tokenizer C)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_C_COMPILER /usr/bin/gcc)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -shared")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_options(-fsanitize=address -g)
