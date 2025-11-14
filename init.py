@@ -138,9 +138,15 @@ def generate_parser_manager_lists(csv_path="dl-libs.csv"):
 // Registry of all compiled-in grammars
 {"\n".join(extern_const)}
 
-int pm_set_lang(ParserManager *pm, const char *lang_id) {{
+int source_code_parser__set_lang(source_code_parser_t *pm, const char *lang_id) {{
     if (!pm || !lang_id) return -1;
+
+    const TSLanguage *new_lang = NULL;
+
     {"\n    else ".join(ifs)}
+
+    pm->lang = new_lang;
+    ts_parser_set_language(pm->parser, pm->lang);
     return 0;
 }}
 
@@ -151,10 +157,10 @@ static const char *langs[] = {{
 /**
  * Enumerate supported languages.
  */
-int get_languages(char ***language_list, int *list_size) {{
+int get_languages(const char ***language_list, int *list_size) {{
     if (!language_list || !list_size) return -1;
     *list_size = sizeof(langs) / sizeof(langs[0]);
-    *language_list = (char **)langs;
+    *language_list = (const char **)langs;
     return 0;
 }}
 """

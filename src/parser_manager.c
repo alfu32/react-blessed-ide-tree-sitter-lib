@@ -9,18 +9,70 @@
 void *ts_local_alloc(size_t c,size_t n) { return calloc(c,n); }
 void ts_local_free(void *p) { free(p); }
 
-source_code_parser_t *source_code_parser__new(const char *lang_id) {
+source_code_parser_t *source_code_parser__new(const char *lang_id, const char *filename){
     source_code_parser_t *pm = ts_local_alloc(1, sizeof(source_code_parser_t));
+    if (!pm)
+        return NULL;
+
     pm->parser = ts_parser_new();
-    source_code_parser__set_lang(pm,lang_id);
+    if (!pm->parser) {
+        ts_local_free(pm);
+        printf("no parser");
+        return NULL;
+    }
+
+    int error = source_code_parser__set_lang(pm,lang_id); // or however your language is resolved
+    if (error) {
+        ts_parser_delete(pm->parser);
+        ts_local_free(pm);
+        printf("no parser for lang %s",lang_id);
+        return NULL;
+    }
+
     ts_parser_set_language(pm->parser, pm->lang);
+
+    // filename handling
+    if (filename && *filename) {
+        pm->filename = strdup(filename);
+    } else {
+        pm->filename = strdup("<unnamed>");
+    }
+
+    pm->tree = NULL;
+    pm->source = NULL;
+    pm->source_len = 0;
     return pm;
 }
 
+void source_code_parser__set_source(
+    source_code_parser_t *pm,
+    const char *src
+) {
+    if (!pm) return;
+
+    ts_local_free((void*)pm->source);
+    pm->source_len = src ? strlen(src) : 0;
+    pm->source = src ? strdup(src) : NULL;
+}
+
+/**
+ * Free all dynamic allocations in token_stream_t.
+ */
 void source_code_parser__free(source_code_parser_t *pm) {
     if (!pm) return;
-    if (pm->tree) ts_tree_delete(pm->tree);
-    if (pm->parser) ts_parser_delete(pm->parser);
+
+    if (pm->tree) {
+        ts_tree_delete(pm->tree);
+        pm->tree = NULL;
+    }
+
+    if (pm->parser) {
+        ts_parser_delete(pm->parser);
+        pm->parser = NULL;
+    }
+
+    ts_local_free(pm->source);
+    ts_local_free(pm->filename);
     ts_local_free(pm);
 }
 
@@ -133,13 +185,13 @@ static void collect_tokens_filtered(TSNode node, const char *source,
         char qualifier[1024] = {0};
         build_full_path(full_path, qualifier, sizeof(full_path), node);
         if (!sizeof(full_path)) {
-            free(text);
+            ts_local_free(text);
             return;
         }
 
         token_t *new_array = realloc(stream->tokens, sizeof(token_t) * (stream->count + 1));
         if (!new_array) {
-            free(text);
+            ts_local_free(text);
             return;
         }
         stream->tokens = new_array;
@@ -162,15 +214,21 @@ static void collect_tokens_filtered(TSNode node, const char *source,
 }
 
 token_stream_t *source_code_parser__get_all_visible_tokens(
-    source_code_parser_t *pm,
-    const char *source,
-    int x0, int y0, int x1, int y1
+    source_code_parser_t *pm, int x0, int y0, int x1, int y1
 ) {
-    token_stream_t *stream = ts_local_alloc(1, sizeof(token_stream_t));
-    if (!stream || !source )
-        return stream;
+    if (!pm || !pm->source)
+        return NULL;
 
-    pm->tree = ts_parser_parse_string(pm->parser, NULL, source, strlen(source));
+    token_stream_t *stream = ts_local_alloc(1, sizeof(token_stream_t));
+    if (!stream || !pm->source )
+        return stream;
+    
+    if (pm->tree) {
+        ts_tree_delete(pm->tree);
+        pm->tree = NULL;
+    }
+
+    pm->tree = ts_parser_parse_string(pm->parser, NULL, pm->source, strlen(pm->source));
     if (!pm->tree) {
         source_code_parser__free(pm);
         return stream;
@@ -178,31 +236,37 @@ token_stream_t *source_code_parser__get_all_visible_tokens(
 
     TSNode root = ts_tree_root_node(pm->tree);
     if (!ts_node_is_null(root))
-        collect_tokens_filtered(root, source, stream, x0, y0, x1, y1);
+        collect_tokens_filtered(root, pm->source, stream, x0, y0, x1, y1);
     return stream;
 }
 
-int source_code_parser__update(source_code_parser_t *pm, const char *source, const token_stream_t *stream) {
-    if (!pm) return -1;
-    pm->tree = ts_parser_parse_string(pm->parser, pm->tree, source, strlen(source));
+int source_code_parser__update(
+    source_code_parser_t *pm,
+    const token_stream_t *stream
+) {
+    if (!pm || !pm->source)
+        return -1;
+    pm->tree = ts_parser_parse_string(pm->parser, pm->tree, pm->source, strlen(pm->source));
     (void)stream;
     return 0;
 }
 
-/**
- * Free all dynamic allocations in token_stream_t.
- */
-void token_stream__free(token_stream_t *stream) {
-    if (!stream || !stream->tokens) {
-        ts_local_free(stream);
-        return;
+void token_stream__free(token_stream_t *stream){
+    if (!stream) return;
+    if (stream->tokens) {
+        for (int i = 0; i < stream->count; ++i) {
+            token_t *t = &stream->tokens[i];
+            ts_local_free((void*)t->content);
+            ts_local_free((void*)t->node_type);
+            ts_local_free((void*)t->full_path);
+            t->content = NULL;
+            t->node_type = NULL;
+            t->full_path = NULL;
+            t->full_path_length = 0;
+        }
+        ts_local_free(stream->tokens);
     }
-    for (int i = 0; i < stream->count; i++) {
-        token_t *t = &stream->tokens[i];
-        ts_local_free((void*)t->content);
-        ts_local_free((void*)t->node_type);
-        ts_local_free((void*)t->full_path);
-    }
-    ts_local_free(stream->tokens);
+    stream->tokens = NULL;
+    stream->count = 0;
     ts_local_free(stream);
 }

@@ -48,18 +48,20 @@ class source_code_parser_t(ctypes.Structure):
 # Function prototypes
 # -----------------------------------------------------------------------------
 
-lib.source_code_parser__new.argtypes = [ctypes.c_char_p]
+lib.source_code_parser__new.argtypes = [ctypes.c_char_p,ctypes.c_char_p]
 lib.source_code_parser__new.restype = ctypes.POINTER(source_code_parser_t)
 
 lib.source_code_parser__set_lang.argtypes = [ctypes.POINTER(source_code_parser_t), ctypes.c_char_p]
 lib.source_code_parser__set_lang.restype = ctypes.c_int
+
+lib.source_code_parser__set_source.argtypes = [ctypes.POINTER(source_code_parser_t), ctypes.c_char_p]
+lib.source_code_parser__set_source.restype = None
 
 lib.source_code_parser__free.argtypes = [ctypes.POINTER(source_code_parser_t)]
 lib.source_code_parser__free.restype = None
 
 lib.source_code_parser__get_all_visible_tokens.argtypes = [
     ctypes.POINTER(source_code_parser_t),
-    ctypes.c_char_p,
     ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
 ]
 lib.source_code_parser__get_all_visible_tokens.restype = ctypes.POINTER(token_stream_t)
@@ -82,11 +84,14 @@ lib.token_stream__free.restype = None
 # High-level Python wrappers
 # -----------------------------------------------------------------------------
 
-def source_code_parser__new(lang_id: str):
-    pm = lib.source_code_parser__new(lang_id.encode("utf-8"))
+def source_code_parser__new(lang_id: str,filename:str):
+    pm = lib.source_code_parser__new(lang_id.encode("utf-8"),filename.encode("utf-8"))
     if not pm:
-        raise RuntimeError(f"Failed to create ParserManager for {lang_id}")
+        raise RuntimeError(f"Failed to create ParserManager for {lang_id} with name {filename}")
     return pm
+
+def source_code_parser__set_source(parser, source: str):
+    lib.source_code_parser__set_source(parser, source.encode("utf-8"))
 
 def source_code_parser__free(pm):
     if pm:
@@ -100,9 +105,9 @@ def get_languages():
         return []
     return [arr[i].decode("utf-8") for i in range(n.value)]
 
-def source_code_parser__get_all_visible_tokens(pm, source: str, x0=0, y0=0, x1=9999, y1=9999):
+def source_code_parser__get_all_visible_tokens(pm, x0=0, y0=0, x1=9999, y1=9999) -> list[dict[str,any]]:
     stream_ptr = lib.source_code_parser__get_all_visible_tokens(
-        pm, source.encode("utf-8"), x0, y0, x1, y1
+        pm, x0, y0, x1, y1
     )
     if not stream_ptr:
         return []
@@ -116,9 +121,14 @@ def source_code_parser__get_all_visible_tokens(pm, source: str, x0=0, y0=0, x1=9
         tokens.append(t.toMap())
 
     # now it's safe to free
-    lib.token_stream__free(stream_ptr)
+    token_stream__free(stream_ptr)
     return tokens
 
-def source_code_parser__update(pm, source: str, token_stream=None):
+def source_code_parser__update(pm, token_stream=None):
     ts_ptr = ctypes.pointer(token_stream) if token_stream else None
-    return lib.source_code_parser__update(pm, source.encode("utf-8"), ts_ptr)
+    return lib.source_code_parser__update(pm, ts_ptr)
+
+
+def token_stream__free(token_stream):
+    if token_stream:
+        lib.token_stream__free(token_stream)

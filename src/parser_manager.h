@@ -5,6 +5,10 @@
 #include <string.h>
 #include <stdio.h>
 
+
+#define owned 
+#define borrowed
+
 #ifdef _WIN32
   #define API_EXPORT __declspec(dllexport)
 #else
@@ -38,25 +42,30 @@ typedef struct {
     TSParser *parser;
     TSTree *tree;
     const TSLanguage *lang;
-    const char* source;
+    owned char* source;
+    size_t      source_len;
+    owned char       *filename;   // ← new: owned copy of the filename
 } source_code_parser_t;
 
-API_EXPORT source_code_parser_t *source_code_parser__new(const char *lang_id);
+API_EXPORT source_code_parser_t *source_code_parser__new(const char *lang_id, const char *filename);
 API_EXPORT int source_code_parser__set_lang(source_code_parser_t * pm,const char *lang_id);
 API_EXPORT void source_code_parser__free(source_code_parser_t *pm);
 
+API_EXPORT void source_code_parser__set_source(
+    source_code_parser_t *pm,
+    const char *source
+);
+
 API_EXPORT token_stream_t *source_code_parser__get_all_visible_tokens(
     source_code_parser_t *pm,
-    const char *source,
     int x0, int y0, int x1, int y1
 );
 
 API_EXPORT int source_code_parser__update(
     source_code_parser_t *pm,
-    const char *source,
     const token_stream_t *stream
 );
 
-API_EXPORT int get_languages(char ***language_list, int *list_size);
+API_EXPORT int get_languages(const char ***language_list, int *list_size);
 
 API_EXPORT void token_stream__free(token_stream_t *stream);
