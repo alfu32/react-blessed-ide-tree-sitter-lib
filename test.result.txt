@@ -1,0 +1,245 @@
+devlin@lw232455511:~/Development/c-tree-sitter/src$ gcc  ./text_editor.c ./text_editor.test.c -o ./text_editor.test
+devlin@lw232455511:~/Development/c-tree-sitter/src$ ./text_editor.test 
+
+=== [ 1/20] (./text_editor.test.c) [editor allocation and initialisation] ==========================================
+         - [01.01] [ OK] (line:  41) alloc returns ok
+         - [01.02] [ OK] (line:  42) editor pointer not null
+         - [01.03] [ OK] (line:  45) init returns ok
+         - [01.04] [ OK] (line:  55) get_view returns ok
+         - [01.05] [ OK] (line:  56) at least one line visible
+         - [01.06] [ OK] (line:  57) single default cursor
+         - [01.07] [ OK] (line:  63) text snapshot not yet implemented
+
+=== [ 2/20] (./text_editor.test.c) [set text and basic viewport] ==========================================
+         - [02.01] [ OK] (line:  18) editor allocation
+         - [02.02] [ OK] (line:  19) editor non-null
+         - [02.03] [ OK] (line:  21) editor initialisation
+         - [02.04] [ OK] (line:  23) set text from c string
+         - [02.05] [ OK] (line:  79) get_view returns ok
+         - [02.06] [ OK] (line:  80) two lines visible
+         - [02.07] [ OK] (line:  81) first line number is 1
+         - [02.08] [ OK] (line:  82) second line number is 2
+         - [02.09] [ OK] (line:  89) first line content is abc
+         - [02.10] [ OK] (line:  90) second line content is def
+
+=== [ 3/20] (./text_editor.test.c) [basic cursor movement with arrows] ==========================================
+         - [03.01] [ OK] (line:  18) editor allocation
+         - [03.02] [ OK] (line:  19) editor non-null
+         - [03.03] [ OK] (line:  21) editor initialisation
+         - [03.04] [ OK] (line:  23) set text from c string
+         - [03.05] [ OK] (line: 112) right arrow returns ok
+         - [03.06] [ OK] (line: 115) get_view returns ok after right
+         - [03.07] [ OK] (line: 116) single cursor after right
+         - [03.08] [ OK] (line: 117) cursor on first line
+         - [03.09] [ OK] (line: 118) cursor column 1 after right
+         - [03.10] [ OK] (line: 122) down arrow returns ok
+         - [03.11] [ OK] (line: 125) get_view returns ok after down
+         - [03.12] [ OK] (line: 126) cursor moved to second line
+         - [03.13] [ OK] (line: 127) cursor column within line bounds
+         - [03.14] [ OK] (line: 131) left arrow returns ok
+         - [03.15] [ OK] (line: 134) get_view returns ok after left
+
+=== [ 4/20] (./text_editor.test.c) [home and end keys move within line] ==========================================
+         - [04.01] [ OK] (line:  18) editor allocation
+         - [04.02] [ OK] (line:  19) editor non-null
+         - [04.03] [ OK] (line:  21) editor initialisation
+         - [04.04] [ OK] (line:  23) set text from c string
+         - [04.05] [ OK] (line: 158) home returns ok
+         - [04.06] [ OK] (line: 160) get_view after home
+         - [04.07] [ OK] (line: 161) cursor at column 0 after home
+         - [04.08] [ OK] (line: 165) end returns ok
+         - [04.09] [ OK] (line: 167) get_view after end
+         - [04.10] [ OK] (line: 168) cursor at line end after end
+
+=== [ 5/20] (./text_editor.test.c) [insert characters without selections] ==========================================
+         - [05.01] [ OK] (line:  18) editor allocation
+         - [05.02] [ OK] (line:  19) editor non-null
+         - [05.03] [ OK] (line:  21) editor initialisation
+         - [05.04] [ OK] (line:  23) set text from c string
+         - [05.05] [ OK] (line: 184) insert a ok
+         - [05.06] [ OK] (line: 188) insert b ok
+         - [05.07] [ OK] (line: 192) insert c ok
+         - [05.08] [ OK] (line: 201) get_view after inserts
+         - [05.09] [ OK] (line: 202) has at least one line
+         - [05.10] [ OK] (line: 206) line content is abc
+
+=== [ 6/20] (./text_editor.test.c) [backspace and delete without selections] ==========================================
+         - [06.01] [ OK] (line:  18) editor allocation
+         - [06.02] [ OK] (line:  19) editor non-null
+         - [06.03] [ OK] (line:  21) editor initialisation
+         - [06.04] [ OK] (line:  23) set text from c string
+         - [06.05] [ OK] (line: 218) end key ok
+         - [06.06] [ OK] (line: 222) backspace ok
+         - [06.07] [ OK] (line: 231) get_view after backspace
+         - [06.08] [ OK] (line: 234) text after backspace is ab
+         - [06.09] [ OK] (line: 240) delete ok
+         - [06.10] [ OK] (line: 243) get_view after delete
+         - [06.11] [ OK] (line: 245) text after delete is b
+
+=== [ 7/20] (./text_editor.test.c) [enter key splits lines] ==========================================
+         - [07.01] [ OK] (line:  18) editor allocation
+         - [07.02] [ OK] (line:  19) editor non-null
+         - [07.03] [ OK] (line:  21) editor initialisation
+         - [07.04] [ OK] (line:  23) set text from c string
+         - [07.05] [ OK] (line: 261) enter key ok
+         - [07.06] [ OK] (line: 270) get_view after enter
+         - [07.07] [ OK] (line: 271) two lines after split
+         - [07.08] [ OK] (line: 277) first split line is ab
+         - [07.09] [ OK] (line: 278) second split line is cd
+
+=== [ 8/20] (./text_editor.test.c) [ctrl arrow word navigation] ==========================================
+         - [08.01] [ OK] (line:  18) editor allocation
+         - [08.02] [ OK] (line:  19) editor non-null
+         - [08.03] [ OK] (line:  21) editor initialisation
+         - [08.04] [ OK] (line:  23) set text from c string
+         - [08.05] [ OK] (line: 292) ctrl-right first ok
+         - [08.06] [ OK] (line: 301) get_view after ctrl-right
+         - [08.07] [ OK] (line: 302) cursor at start of two
+         - [08.08] [ OK] (line: 305) ctrl-right second ok
+         - [08.09] [ OK] (line: 307) get_view after second ctrl-right
+         - [08.10] [ OK] (line: 308) cursor moved into three or beyond
+         - [08.11] [ OK] (line: 312) ctrl-left ok
+         - [08.12] [ OK] (line: 315) get_view after ctrl-left
+
+=== [ 9/20] (./text_editor.test.c) [find_all case-insensitive plain string] ==========================================
+         - [09.01] [ OK] (line:  18) editor allocation
+         - [09.02] [ OK] (line:  19) editor non-null
+         - [09.03] [ OK] (line:  21) editor initialisation
+         - [09.04] [ OK] (line:  23) set text from c string
+         - [09.05] [ OK] (line: 331) find_all returns ok
+         - [09.06] [ OK] (line: 340) get_view after find_all
+         - [09.07] [ OK] (line: 341)selection count is 3 
+         - [09.08] [ OK] (line: 343) first match at 0
+         - [09.09] [ OK] (line: 344) first match length 3
+         - [09.10] [ OK] (line: 345) second match at 4
+         - [09.11] [ OK] (line: 346) third match at 8
+
+=== [10/20] (./text_editor.test.c) [find_all whole word only] ==========================================
+         - [10.01] [ OK] (line:  18) editor allocation
+         - [10.02] [ OK] (line:  19) editor non-null
+         - [10.03] [ OK] (line:  21) editor initialisation
+         - [10.04] [ OK] (line:  23) set text from c string
+         - [10.05] [ OK] (line: 362) find_all returns ok
+         - [10.06] [ OK] (line: 371) get_view after find_all whole word
+         - [10.07] [ OK] (line: 373)selection count is 2 
+         - [10.08] [ OK] (line: 374) first whole word at 5
+         - [10.09] [ OK] (line: 375) second whole word at 14
+
+=== [11/20] (./text_editor.test.c) [ctrl-F emits find intent event] ==========================================
+         - [11.01] [ OK] (line:  18) editor allocation
+         - [11.02] [ OK] (line:  19) editor non-null
+         - [11.03] [ OK] (line:  21) editor initialisation
+         - [11.04] [ OK] (line:  23) set text from c string
+         - [11.05] [ OK] (line: 390) handle ctrl-F ok
+         - [11.06] [ OK] (line: 394) next_event ok
+         - [11.07] [ OK] (line: 395) find intent event emitted
+
+=== [12/20] (./text_editor.test.c) [ctrl-click emits intellisense lookup event] ==========================================
+         - [12.01] [ OK] (line:  18) editor allocation
+         - [12.02] [ OK] (line:  19) editor non-null
+         - [12.03] [ OK] (line:  21) editor initialisation
+         - [12.04] [ OK] (line:  23) set text from c string
+         - [12.05] [ OK] (line: 412) handle ctrl-click ok
+         - [12.06] [ OK] (line: 416) next_event ok
+         - [12.07] [ OK] (line: 417) intellisense lookup event type
+         - [12.08] [ OK] (line: 418) intellisense line index 0
+         - [12.09] [ OK] (line: 419) intellisense column index 1
+
+=== [13/20] (./text_editor.test.c) [hover debounce emits hover word event] ==========================================
+         - [13.01] [ OK] (line:  18) editor allocation
+         - [13.02] [ OK] (line:  19) editor non-null
+         - [13.03] [ OK] (line:  21) editor initialisation
+         - [13.04] [ OK] (line:  23) set text from c string
+         - [13.05] [ OK] (line: 428) set hover delay ok
+         - [13.06] [ OK] (line: 439) first move ok
+         - [13.07] [ OK] (line: 443) second move ok
+         - [13.08] [ OK] (line: 447) next_event ok
+         - [13.09] [ OK] (line: 448) hover word event type
+         - [13.10] [ OK] (line: 449) hover position line 0
+         - [13.11] [ OK] (line: 457) hovered word is hello
+
+=== [14/20] (./text_editor.test.c) [alt-click toggles additional cursor] ==========================================
+         - [14.01] [ OK] (line:  18) editor allocation
+         - [14.02] [ OK] (line:  19) editor non-null
+         - [14.03] [ OK] (line:  21) editor initialisation
+         - [14.04] [ OK] (line:  23) set text from c string
+         - [14.05] [ OK] (line: 472) initial get_view ok
+         - [14.06] [ OK] (line: 473) initial single cursor
+         - [14.07] [ OK] (line: 484) alt-click add cursor ok
+         - [14.08] [ OK] (line: 487) get_view after alt-click
+         - [14.09] [ OK] (line: 488) two cursors after alt-click
+         - [14.10] [ OK] (line: 491) alt-click remove cursor ok
+         - [14.11] [ OK] (line: 494) get_view after alt-click remove
+         - [14.12] [ OK] (line: 495) back to single cursor
+
+=== [15/20] (./text_editor.test.c) [scroll modifies mouse-to-line mapping] ==========================================
+         - [15.01] [ OK] (line:  18) editor allocation
+         - [15.02] [ OK] (line:  19) editor non-null
+         - [15.03] [ OK] (line:  21) editor initialisation
+         - [15.04] [ OK] (line:  23) set text from c string
+         - [15.05] [ OK] (line: 512) alt-click before scroll ok
+         - [15.06] [ OK] (line: 523) alt-click 2 before scroll ok
+         - [15.07] [ OK] (line: 532) get_view before scroll
+         - [15.08] [ OK] (line: 533) two cursors before scroll
+         - [15.09] [NOK] (line: 534) second cursor at line 0 before scroll
+         - [15.10] [ OK] (line: 543) scroll relative ok
+         - [15.11] [ OK] (line: 547) alt-click after scroll ok
+         - [15.12] [ OK] (line: 550) get_view after scroll
+         - [15.13] [NOK] (line: 551) three cursors after second alt-click
+         - [15.14] [NOK] (line: 552) new cursor at line 2 after scroll
+
+=== [16/20] (./text_editor.test.c) [ctrl-shift-arrow selects word (missing feature)] ==========================================
+         - [16.01] [ OK] (line:  18) editor allocation
+         - [16.02] [ OK] (line:  19) editor non-null
+         - [16.03] [ OK] (line:  21) editor initialisation 
+         - [16.04] [ OK] (line:  23) set text from c string
+         - [16.05] [ OK] (line: 566) ctrl-shift-right ok
+         - [16.06] [ OK] (line: 575) get_view after ctrl-shift-right
+         - [16.07] [NOK] (line: 577) word selection created by ctrl-shift-right
+
+=== [17/20] (./text_editor.test.c) [mouse drag selection creates selection (missing feature)] ==========================================
+         - [17.01] [ OK] (line:  18) editor allocation
+         - [17.02] [ OK] (line:  19) editor non-null
+         - [17.03] [ OK] (line:  21) editor initialisation
+         - [17.04] [ OK] (line:  23) set text from c string
+         - [17.05] [ OK] (line: 598) mouse down ok
+         - [17.06] [ OK] (line: 604) mouse move ok
+         - [17.07] [ OK] (line: 610) mouse up ok
+         - [17.08] [ OK] (line: 619) get_view after drag selection
+         - [17.09] [NOK] (line: 621) selection created by drag
+
+=== [18/20] (./text_editor.test.c) [ctrl-c ctrl-v copy paste selections (missing feature)] ==========================================
+         - [18.01] [ OK] (line:  18) editor allocation
+         - [18.02] [ OK] (line:  19) editor non-null
+         - [18.03] [ OK] (line:  21) editor initialisation
+         - [18.04] [ OK] (line:  23) set text from c string
+         - [18.05] [ OK] (line: 641) find_all for hello ok
+         - [18.06] [ OK] (line: 651) ctrl-c ok
+         - [18.07] [ OK] (line: 657) end before paste ok
+         - [18.08] [ OK] (line: 664) ctrl-v ok
+         - [18.09] [ OK] (line: 673) get_view after ctrl-v
+         - [18.10] [NOK] (line: 677) line reflects pasted selection at end
+
+=== [19/20] (./text_editor.test.c) [shift-tab dedents line or block (missing feature)] ==========================================
+         - [19.01] [ OK] (line:  18) editor allocation
+         - [19.02] [ OK] (line:  19) editor non-null
+         - [19.03] [ OK] (line:  21) editor initialisation
+         - [19.04] [ OK] (line:  23) set text from c string
+         - [19.05] [ OK] (line: 690) home ok
+         - [19.06] [ OK] (line: 695) shift-tab ok
+         - [19.07] [ OK] (line: 704) get_view after shift-tab
+         - [19.08] [NOK] (line: 711) first line dedented to no leading spaces
+         - [19.09] [ OK] (line: 712) second line unchanged
+
+=== [20/20] (./text_editor.test.c) [regexp search finds matches (missing feature)] ==========================================
+         - [20.01] [ OK] (line:  18) editor allocation
+         - [20.02] [ OK] (line:  19) editor non-null
+         - [20.03] [ OK] (line:  21) editor initialisation
+         - [20.04] [ OK] (line:  23) set text from c string
+         - [20.05] [ OK] (line: 728) find_all regexp ok
+         - [20.06] [ OK] (line: 737) get_view after regexp find_all
+         - [20.07] [NOK] (line: 739)regexp selections count is 0 
+
+Total test points: 199
+Total success: 191
+Total failures:  8
