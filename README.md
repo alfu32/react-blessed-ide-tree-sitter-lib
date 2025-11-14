@@ -19,12 +19,19 @@ it will
 
 ## npm build config
 
-ensure node-gyp is installed
+first ensure node-gyp is installed and then install npm deps
 
 ```bash
 cd src/nodejs
 npm install
 cd ../../
+```
+
+you can test the npm build only after you have already got the [tree_sitter_lib](build/libtree_sitter_tokenizer.so) :
+
+
+```bash
+npm run build
 ```
 
 ## Build
@@ -37,12 +44,6 @@ build and test using the script
 
 
 ## install npm module
-
-
-Paul here.
-There are two clean, maintainable ways to bundle your Node-API addon (`tokenizer_addon.node` + your C library) so it can be reused in other projects:
-
----
 
 ## **Option 1 — Publish it as an npm package (recommended)**
 
