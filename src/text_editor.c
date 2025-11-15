@@ -411,6 +411,94 @@ static error text_editor__ensure_selection_capacity(text_editor_t *self, size_t 
     return TEXT_EDITOR_ERROR_OK;
 }
 
+/* set internal clipboard contents to text[0..length) */
+static error text_editor__set_clipboard(text_editor_t *self,
+                                        const char *text,
+                                        size_t length) {
+    char *new_data = NULL;
+    if (length > 0) {
+        new_data = (char *)malloc(length + 1);
+        if (!new_data) {
+            return TEXT_EDITOR_ERROR_OUT_OF_MEMORY;
+        }
+        memcpy(new_data, text, length);
+        new_data[length] = '\0';
+    }
+
+    if (self->clipboard) {
+        free(self->clipboard);
+    }
+    self->clipboard = new_data;
+    self->clipboard_length = length;
+    return TEXT_EDITOR_ERROR_OK;
+}
+
+/* copy current selections into clipboard; optionally cut them from buffer.
+   Currently handles only the first selection and only single-line selection.
+   TODO: full multi-selection and multi-line support. */
+static error text_editor__copy_or_cut(text_editor_t *self, bool is_cut) {
+    if (self->selections.count == 0) {
+        /* no selection: do not change clipboard, but still emit event */
+        text_editor_event_t ev;
+        ev.type = is_cut ? TEXT_EDITOR_EVENT_CUT : TEXT_EDITOR_EVENT_COPY;
+        return text_editor__event_queue_push(&self->events, &ev);
+    }
+
+    text_editor_selection_t sel = self->selections.items[0];
+    text_editor__normalize_selection(&sel);
+    text_editor__clamp_position(self, &sel.start);
+    text_editor__clamp_position(self, &sel.end);
+
+    if (sel.start.line_index != sel.end.line_index) {
+        /* multi-line selection not implemented yet */
+        return TEXT_EDITOR_ERROR_INTERNAL;
+    }
+
+    if (sel.start.line_index >= self->lines.count) {
+        return TEXT_EDITOR_ERROR_INDEX_OUT_OF_RANGE;
+    }
+
+    text_line_t *line = &self->lines.items[sel.start.line_index];
+    size_t start_byte = text_editor__column_to_byte_offset(line,
+                                                           sel.start.column_index);
+    size_t end_byte = text_editor__column_to_byte_offset(line,
+                                                         sel.end.column_index);
+    if (end_byte < start_byte || end_byte > line->length) {
+        return TEXT_EDITOR_ERROR_INTERNAL;
+    }
+
+    error err = text_editor__set_clipboard(self,
+                                           line->data + start_byte,
+                                           end_byte - start_byte);
+    if (err != TEXT_EDITOR_ERROR_OK) {
+        return err;
+    }
+
+    if (is_cut) {
+        /* delete selected range and place cursor at start */
+        err = text_editor__line_delete_range(line,
+                                             sel.start.column_index,
+                                             sel.end.column_index -
+                                                 sel.start.column_index);
+        if (err != TEXT_EDITOR_ERROR_OK) {
+            return err;
+        }
+        err = text_editor__ensure_cursor_capacity(self, 1);
+        if (err != TEXT_EDITOR_ERROR_OK) {
+            return err;
+        }
+        self->cursors.count = 1;
+        self->cursors.items[0].position = sel.start;
+    }
+
+    /* for both copy and cut, selections are cleared after operation */
+    self->selections.count = 0;
+
+    text_editor_event_t ev;
+    ev.type = is_cut ? TEXT_EDITOR_EVENT_CUT : TEXT_EDITOR_EVENT_COPY;
+    return text_editor__event_queue_push(&self->events, &ev);
+}
+
 /* ===== public API implementation ===== */
 
 error text_editor__alloc(text_editor_t **out_editor) {
@@ -1022,9 +1110,29 @@ error text_editor__handle_key(text_editor_t *self,
         goto handle_character_key;
     case TEXT_EDITOR_KEY_CHARACTER:
     default:
-    handle_character_key:
-        /* ctrl+letter: used for copy/cut/paste (TODO, needs external clipboard).
-           For now, only plain character insertion when not ctrl. */
+handle_character_key:
+        /* ctrl+letter: copy, cut, paste or others.
+           We special-case c/x/v when ctrl is down. */
+        /* plain character insertion when not ctrl */
+        if (ctrl && key_event->key_code == TEXT_EDITOR_KEY_CHARACTER &&
+            key_event->input_utf8_length == 1) {
+            char ch = (char)key_event->input_utf8[0];
+            unsigned char lower = (unsigned char)tolower((unsigned char)ch);
+
+            if (lower == 'c') {
+                return text_editor__copy_or_cut(self, false);
+            } else if (lower == 'x') {
+                return text_editor__copy_or_cut(self, true);
+            } else if (lower == 'v') {
+                /* paste intent: editor cannot access OS clipboard,
+                   so just emit an event and let caller invoke paste(). */
+                text_editor_event_t ev;
+                ev.type = TEXT_EDITOR_EVENT_PASTE_INTENT;
+                return text_editor__event_queue_push(&self->events, &ev);
+            }
+            /* fall through to normal handling for other ctrl+char if desired */
+        }
+
         if (!ctrl && key_event->key_code == TEXT_EDITOR_KEY_CHARACTER &&
             key_event->input_utf8_length > 0) {
             return text_editor__insert_text_at_cursors(self,
@@ -1121,6 +1229,25 @@ error text_editor__handle_mouse(text_editor_t *self,
        TODO: needs tracking of drag start and button state in editor. */
 
     return TEXT_EDITOR_ERROR_OK;
+}
+
+error text_editor__paste(OWNED text_editor_t *self,
+                         BORROWED const char *text,
+                         size_t text_length) {
+    if (!self || (!text && text_length > 0)) {
+        return TEXT_EDITOR_ERROR_INVALID_ARGUMENT;
+    }
+    if (text_length == 0) {
+        return TEXT_EDITOR_ERROR_OK;
+    }
+
+    /* TODO: support multi-line paste and multi-selection.
+       For now we treat the text as a flat byte sequence with no newlines. */
+    error err = text_editor__set_clipboard(self, text, text_length);
+    if (err != TEXT_EDITOR_ERROR_OK) {
+        return err;
+    }
+    return text_editor__insert_text_at_cursors(self, text, text_length);
 }
 
 /* scrolling */

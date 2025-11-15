@@ -165,7 +165,10 @@ typedef enum text_editor_event_type_e {
     TEXT_EDITOR_EVENT_HOVER_WORD,          /* hover delay elapses */
     TEXT_EDITOR_EVENT_FIND_INTENT,         /* ctrl+F */
     TEXT_EDITOR_EVENT_FIND_RESULTS_UPDATED,/* after find_all selections */
-    TEXT_EDITOR_EVENT_SCROLL_INTENT        /* editor requests scroll */
+    TEXT_EDITOR_EVENT_SCROLL_INTENT,       /* editor requests scroll */
+    TEXT_EDITOR_EVENT_COPY,                /* copy command handled */
+    TEXT_EDITOR_EVENT_CUT,                 /* cut command handled */
+    TEXT_EDITOR_EVENT_PASTE_INTENT         /* ctrl+V key received */
 } text_editor_event_type_t;
 
 /* scroll command from host into editor:
@@ -203,6 +206,15 @@ typedef struct text_editor_event_s {
             size_t absolute_first_line;
             size_t absolute_first_column;
         } scroll_intent;
+        struct {
+            /* no fields yet; event is just a signal */
+        } copy;
+        struct {
+            /* no fields yet; event is just a signal */
+        } cut;
+        struct {
+            /* paste requested; caller should provide text to paste */
+        } paste_intent;
     } data;
 } text_editor_event_t;
 
@@ -233,7 +245,9 @@ error        text_editor__get_text_snapshot      (text_editor_t *self, const cha
 error        text_editor__handle_key             (text_editor_t *self, const text_editor_key_event_t *key_event);
 
 error        text_editor__handle_mouse           (text_editor_t *self, const text_editor_mouse_event_t *mouse_event);
-
+/* paste text at current cursors / selections.
+   Caller provides clipboard text; editor never reads OS clipboard itself. */
+error        text_editor__paste                  (text_editor_t *self, const char *text, size_t text_length);
 /* scroll command:
    does NOT change any internal viewport; only emits SCROLL_INTENT event. */
 error        text_editor__scroll                 (text_editor_t *self, const text_editor_scroll_command_t *command);
